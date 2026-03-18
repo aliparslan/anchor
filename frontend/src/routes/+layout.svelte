@@ -1,11 +1,19 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { afterNavigate } from '$app/navigation';
 	import { initTheme } from '$lib/theme';
 	import QuickCaptureButton from '$lib/components/QuickCaptureButton.svelte';
 	import SearchOverlay from '$lib/components/SearchOverlay.svelte';
 	import { House, Newspaper, ChartBar, Tray, Pulse } from 'phosphor-svelte';
 	import '../app.css';
 	let { children } = $props();
+
+	let pageReady = $state(true);
+
+	afterNavigate(() => {
+		pageReady = false;
+		requestAnimationFrame(() => { pageReady = true; });
+	});
 
 	let showSearch = $state(false);
 
@@ -36,7 +44,7 @@
 
 <SearchOverlay bind:open={showSearch} />
 
-<div class="app">
+<div class="app" class:page-enter={pageReady}>
 	{@render children()}
 </div>
 

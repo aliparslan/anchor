@@ -72,28 +72,29 @@
     height: 44px;
     border-radius: 50%;
     border: 1px solid var(--border);
-    background: var(--accent);
-    color: white;
+    background: var(--card-bg);
+    color: var(--text-tertiary);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 12px color-mix(in srgb, var(--accent) 35%, transparent);
     z-index: 99;
     transition: all 0.2s ease;
   }
 
-  .capture-fab:hover {
-    transform: scale(1.08);
-    box-shadow: 0 4px 20px color-mix(in srgb, var(--accent) 45%, transparent);
+  .capture-fab:active {
+    transform: scale(0.95);
+    background: var(--bg-hover);
   }
 
   .capture-fab-open {
     transform: rotate(45deg);
+    color: var(--text);
+    border-color: var(--text-tertiary);
   }
 
-  .capture-fab-open:hover {
-    transform: rotate(45deg) scale(1.08);
+  .capture-fab-open:active {
+    transform: rotate(45deg) scale(0.95);
   }
 
   .capture-backdrop {

@@ -16,7 +16,7 @@
 	import Confetti from '$lib/components/Confetti.svelte';
 	import facts from '$lib/facts.json';
 	import {
-		Moon, Sun, Fire, X,
+		Moon, Sun, Fire, X, Lightbulb,
 		CloudSun, Cloud, CloudRain, CloudSnow, CloudLightning
 	} from 'phosphor-svelte';
 
@@ -105,8 +105,13 @@
 		return hour >= 19 || hour < 6;
 	}
 
+	function isQuietHours(): boolean {
+		return new Date().getHours() >= 21;
+	}
+
 	function getGreeting(): string {
 		const hour = new Date().getHours();
+		if (hour >= 21) return 'Wind down, Alip';
 		if (hour < 12) return 'Good morning, Alip';
 		if (hour < 17) return 'Good afternoon, Alip';
 		return 'Good evening, Alip';
@@ -184,7 +189,7 @@
 	const weatherIcon = $derived(weather ? getWeatherIcon(weather.weather_code) : 'sun');
 </script>
 
-<div>
+<div class:quiet-hours={isQuietHours()}>
 	<div class="page-header">
 		<div>
 			<h1 class="greeting">{getGreeting()}</h1>
@@ -307,6 +312,7 @@
 
 	{#if !factDismissed}
 		<div class="fact-card">
+			<Lightbulb size={14} weight="duotone" class="fact-icon" />
 			<span class="fact-text">{dailyFact}</span>
 			<button class="fact-dismiss" onclick={() => {
 				factDismissed = true;

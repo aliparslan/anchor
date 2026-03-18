@@ -259,7 +259,7 @@
 			{:else}
 				<ul class="hn-list">
 					{#each displayedHn as post, i}
-						<li class="hn-item" class:read={readHnSet.has(String(post.hn_id))}>
+						<li class="hn-item stagger-in" style="animation-delay: {i * 40}ms" class:read={readHnSet.has(String(post.hn_id))}>
 							<div class="hn-rank-col">
 								<span class="hn-rank">{i + 1}</span>
 								<button class="hn-bookmark" class:hn-bookmarked={savedHnIds.has(post.hn_id)} onclick={(e) => handleBookmark(e, post)} aria-label={savedHnIds.has(post.hn_id) ? 'Remove bookmark' : 'Save to reading queue'}>
@@ -314,10 +314,11 @@
 				<div class="empty">No videos yet. Add cookies and refresh.</div>
 			{:else}
 				<div class="yt-grid">
-					{#each visibleVideos as video}
+					{#each visibleVideos as video, vi}
 						<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 						<div
-							class="yt-card"
+							class="yt-card stagger-in"
+							style="animation-delay: {vi * 40}ms"
 							onclick={() => playVideo(video.video_id)}
 						>
 							<div class="yt-thumb-container">
