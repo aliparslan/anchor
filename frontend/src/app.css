@@ -335,7 +335,7 @@ a:hover {
 	margin-top: 8px;
 	border: none;
 	border-radius: 6px;
-	background: none;
+	background: var(--bg-secondary);
 	color: var(--text-tertiary);
 	font-size: 13px;
 	font-family: inherit;

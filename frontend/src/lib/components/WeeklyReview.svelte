@@ -6,13 +6,20 @@
 
   const moodColors = ['', '#e04545', '#e68a3a', '#c4a06a', '#3b82f6', '#22c55e'];
 
-  $effect(() => {
+  function refresh() {
     fetchWeeklyReview().then((data) => (review = data));
-  });
+  }
+
+  function toggle() {
+    expanded = !expanded;
+    if (expanded) refresh();
+  }
+
+  $effect(() => { if (expanded) refresh(); });
 </script>
 
 <div class="weekly-review">
-  <button class="weekly-toggle" onclick={() => (expanded = !expanded)}>
+  <button class="weekly-toggle" onclick={toggle}>
     <span class="weekly-toggle-label">Weekly Review</span>
     <span class="weekly-toggle-arrow" class:weekly-expanded={expanded}>&rsaquo;</span>
   </button>

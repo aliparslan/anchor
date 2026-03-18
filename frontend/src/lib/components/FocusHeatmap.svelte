@@ -3,9 +3,9 @@
 
   let data = $state<FocusDay[]>([]);
 
-  $effect(() => {
+  function refresh() {
     fetchFocusMonth().then((d) => (data = d));
-  });
+  }
 
   const grid = $derived.by(() => {
     const today = new Date();
@@ -37,7 +37,7 @@
 </script>
 
 <div class="heatmap-card">
-  <button class="heatmap-toggle" onclick={() => expanded = !expanded}>
+  <button class="heatmap-toggle" onclick={() => { expanded = !expanded; if (expanded) refresh(); }}>
     <span class="heatmap-toggle-left">
       <span class="heatmap-title">Focus</span>
       <span class="heatmap-subtitle">Last 30 days</span>

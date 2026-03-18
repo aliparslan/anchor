@@ -335,6 +335,10 @@
 
 <SleepLogger />
 
+<div class="section-header">
+	<span class="section-title">Insights</span>
+</div>
+
 <HabitWeekView data={weekData} />
 
 <FocusHeatmap />
@@ -342,10 +346,9 @@
 <WeeklyReview />
 
 {#if achievements.length > 0}
-	<div class="achievements-section">
-		<div class="section-header">
-			<span class="section-title">Achievements</span>
-		</div>
+	<div class="section-header" style="margin-top: 8px">
+		<span class="section-title">Achievements</span>
+	</div>
 		<div class="achievements-grid">
 			{#each achievements as a}
 				<div class="achievement-badge">
@@ -359,7 +362,6 @@
 				</div>
 			{/each}
 		</div>
-	</div>
 {/if}
 
 <style>

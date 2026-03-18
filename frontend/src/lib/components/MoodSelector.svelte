@@ -46,8 +46,8 @@
   }
 
   .mood-circle {
-    width: 56px;
-    height: 56px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     border: 2px solid var(--border);
     background: var(--bg-secondary);
