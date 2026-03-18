@@ -27,3 +27,11 @@ data/youtube_debug.html
 # IDE
 .vscode/
 .idea/
+
+# Claude Code
+.claude/
+.playwright-mcp/
+audit-*.png
+
+# Docs (generated)
+docs/
