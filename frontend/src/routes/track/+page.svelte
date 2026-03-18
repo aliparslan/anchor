@@ -335,7 +335,7 @@
 
 <SleepLogger />
 
-<div class="section-header">
+<div class="section-header track-section-header">
 	<span class="section-title">Insights</span>
 </div>
 
@@ -346,7 +346,7 @@
 <WeeklyReview />
 
 {#if achievements.length > 0}
-	<div class="section-header" style="margin-top: 8px">
+	<div class="section-header track-section-header">
 		<span class="section-title">Achievements</span>
 	</div>
 		<div class="achievements-grid">
@@ -396,7 +396,7 @@
 	}
 
 	.track-spacer {
-		height: 20px;
+		height: var(--space-widget);
 	}
 
 	.custom-habit-delete {
@@ -596,6 +596,10 @@
 	.water-dot-filled {
 		background: var(--color-blue);
 		border-color: var(--color-blue);
+	}
+
+	.track-section-header {
+		margin-top: var(--space-widget);
 	}
 
 	.achievements-section {

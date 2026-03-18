@@ -72,14 +72,22 @@
     height: 44px;
     border-radius: 50%;
     border: 1px solid var(--border);
-    background: var(--card-bg);
-    color: var(--text-tertiary);
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(16px) saturate(1.5);
+    -webkit-backdrop-filter: blur(16px) saturate(1.5);
+    color: var(--text-secondary);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     z-index: 99;
     transition: all 0.2s ease;
+  }
+
+  :global([data-theme='dark']) .capture-fab {
+    background: rgba(30, 30, 30, 0.7);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   }
 
   .capture-fab:active {

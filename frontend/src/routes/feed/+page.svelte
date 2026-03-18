@@ -52,6 +52,11 @@
 	let rssRefreshing = $state(false);
 	let savedRssUrls = $state<Set<string>>(_c?.savedRssUrls ?? new Set());
 	let dismissedRssIds = $state<Set<number>>(new Set(_c?.dismissedRssIds ? [..._c.dismissedRssIds] : []));
+	let readRssUrls = $state<Set<string>>(_c?.readRssUrls ?? new Set());
+
+	function handleRssClick(url: string) {
+		readRssUrls = new Set([...readRssUrls, url]);
+	}
 
 	function playVideo(videoId: string) {
 		activeVideoId = videoId;
@@ -174,13 +179,13 @@
 		setCached('feed', {
 			hnPosts, ytVideos, readHnSet, watchedSet, dismissedSet,
 			savedHnIds, ytRevealCount, rssItems, savedRssUrls,
-			dismissedRssIds: [...dismissedRssIds]
+			dismissedRssIds: [...dismissedRssIds], readRssUrls
 		});
 	});
 
 	const visibleVideos = $derived(
 		ytVideos
-			.filter((v) => !dismissedSet.has(v.video_id) && !watchedSet.has(v.video_id))
+			.filter((v) => !dismissedSet.has(v.video_id))
 			.slice(0, ytRevealCount)
 	);
 	const canRevealMoreYt = $derived(ytRevealCount < ytVideos.length);
@@ -318,6 +323,7 @@
 						<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 						<div
 							class="yt-card stagger-in"
+							class:watched={watchedSet.has(video.video_id)}
 							style="animation-delay: {vi * 40}ms"
 							onclick={() => playVideo(video.video_id)}
 						>
@@ -366,13 +372,13 @@
 			{:else}
 				<ul class="hn-list">
 					{#each displayedRss as item}
-						<li class="hn-item">
+						<li class="hn-item" class:read={readRssUrls.has(item.url)}>
 							<button class="hn-bookmark" class:hn-bookmarked={savedRssUrls.has(item.url)} onclick={(e) => handleRssBookmark(e, item)} aria-label="Save to reading queue">
 								<BookmarkSimple size={14} weight={savedRssUrls.has(item.url) ? "fill" : "regular"} />
 							</button>
 							<div class="hn-content">
 								<div class="hn-title">
-									<a href={item.url} target="_blank" rel="noopener">{item.title}</a>
+									<a href={item.url} target="_blank" rel="noopener" onclick={() => handleRssClick(item.url)}>{item.title}</a>
 									<span class="hn-domain">({item.feed_name})</span>
 								</div>
 								<div class="hn-meta">

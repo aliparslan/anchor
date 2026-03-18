@@ -84,7 +84,7 @@
 		class="journal-textarea"
 		bind:value={content}
 		oninput={handleInput}
-		placeholder={isToday ? "What's on your mind today?" : "No entry for this day"}
+		placeholder={isToday ? "What's on your mind today?" : "No entry"}
 		rows="4"
 	></textarea>
 	{#if dates.length > 1}

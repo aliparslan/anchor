@@ -27,7 +27,7 @@
 
 <style>
   .mood-selector {
-    margin-bottom: 20px;
+    margin-bottom: var(--space-widget);
   }
 
   .mood-label-text {
@@ -35,7 +35,7 @@
     font-size: 13px;
     color: var(--text-tertiary);
     display: block;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
   }
 
   .mood-circles {
