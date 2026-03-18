@@ -66,6 +66,10 @@
     color: var(--mood-color);
   }
 
+  .mood-circle:active {
+    transform: scale(0.92);
+  }
+
   .mood-selected {
     border-color: var(--mood-color);
     background: var(--card-bg);

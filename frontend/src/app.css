@@ -139,7 +139,8 @@ a:hover {
 	font-family: var(--font-display);
 	font-size: 13px;
 	color: var(--text-tertiary);
-	margin-bottom: 24px;
+	margin-bottom: var(--space-widget);
+	margin-top: -12px;
 }
 
 .habits-list {
@@ -155,7 +156,7 @@ a:hover {
 	padding: 16px;
 	border-bottom: 1px solid var(--border);
 	cursor: pointer;
-	transition: background 0.1s ease;
+	transition: background 0.15s ease, transform 0.15s ease;
 	user-select: none;
 }
 
@@ -224,7 +225,7 @@ a:hover {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	margin-bottom: var(--space-tight);
+	margin-bottom: var(--space-widget);
 }
 
 /* Theme toggle */
@@ -442,7 +443,7 @@ a:hover {
 	border-radius: 8px;
 	overflow: hidden;
 	background: var(--card-bg);
-	transition: box-shadow 0.15s ease;
+	transition: box-shadow 0.15s ease, transform 0.15s ease;
 	cursor: pointer;
 	padding: 8px;
 	width: 100%;
@@ -736,6 +737,7 @@ a:hover {
 
 .pomodoro-btn:active {
 	background: var(--bg-inset);
+	transform: scale(0.9);
 }
 
 .pomodoro-progress-section {

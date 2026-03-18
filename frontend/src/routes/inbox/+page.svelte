@@ -237,7 +237,11 @@
 		padding: 14px 16px;
 		border-radius: 8px;
 		background: var(--card-bg);
-		transition: box-shadow 0.15s ease;
+		transition: box-shadow 0.15s ease, transform 0.15s ease;
+	}
+
+	.inbox-item:active {
+		transform: scale(0.98);
 	}
 
 	.inbox-item:hover {
