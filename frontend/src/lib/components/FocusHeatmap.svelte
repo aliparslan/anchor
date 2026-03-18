@@ -32,42 +32,77 @@
     const hrs = Math.round(d.minutes / 60 * 10) / 10;
     return `${d.date}: ${hrs}h`;
   }
+
+  let expanded = $state(false);
 </script>
 
 <div class="heatmap-card">
-  <div class="heatmap-header">
-    <span class="heatmap-title">Focus</span>
-    <span class="heatmap-subtitle">Last 30 days</span>
-  </div>
-  <div class="heatmap-grid">
-    {#each grid as day}
-      <div class="heatmap-cell {intensity(day.minutes)}" title={label(day)}></div>
-    {/each}
-  </div>
-  <div class="heatmap-legend">
-    <span class="heatmap-legend-label">Less</span>
-    <div class="heatmap-cell heatmap-empty heatmap-legend-cell"></div>
-    <div class="heatmap-cell heatmap-low heatmap-legend-cell"></div>
-    <div class="heatmap-cell heatmap-mid heatmap-legend-cell"></div>
-    <div class="heatmap-cell heatmap-high heatmap-legend-cell"></div>
-    <span class="heatmap-legend-label">More</span>
-  </div>
+  <button class="heatmap-toggle" onclick={() => expanded = !expanded}>
+    <span class="heatmap-toggle-left">
+      <span class="heatmap-title">Focus</span>
+      <span class="heatmap-subtitle">Last 30 days</span>
+    </span>
+    <span class="heatmap-toggle-arrow" class:heatmap-toggle-expanded={expanded}>&rsaquo;</span>
+  </button>
+  {#if expanded}
+    <div class="heatmap-content">
+      <div class="heatmap-grid">
+        {#each grid as day}
+          <div class="heatmap-cell {intensity(day.minutes)}" title={label(day)}></div>
+        {/each}
+      </div>
+      <div class="heatmap-legend">
+        <span class="heatmap-legend-label">Less</span>
+        <div class="heatmap-cell heatmap-empty heatmap-legend-cell"></div>
+        <div class="heatmap-cell heatmap-low heatmap-legend-cell"></div>
+        <div class="heatmap-cell heatmap-mid heatmap-legend-cell"></div>
+        <div class="heatmap-cell heatmap-high heatmap-legend-cell"></div>
+        <span class="heatmap-legend-label">More</span>
+      </div>
+    </div>
+  {/if}
 </div>
 
 <style>
   .heatmap-card {
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 16px;
     background: var(--card-bg);
     margin-bottom: var(--space-widget);
+    overflow: hidden;
   }
 
-  .heatmap-header {
+  .heatmap-toggle {
     display: flex;
+    width: 100%;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    padding: 14px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--text);
+  }
+
+  .heatmap-toggle-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .heatmap-toggle-arrow {
+    color: var(--text-tertiary);
+    transition: transform 0.2s ease;
+    font-size: 18px;
+  }
+
+  .heatmap-toggle-expanded {
+    transform: rotate(90deg);
+  }
+
+  .heatmap-content {
+    padding: 0 16px 16px;
+    animation: fadeSlideIn 0.3s ease;
   }
 
   .heatmap-title {

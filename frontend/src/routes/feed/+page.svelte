@@ -381,7 +381,7 @@
 									{/if}
 								</div>
 							</div>
-							<button class="yt-dismiss-icon" style="opacity: 0.5" onclick={(e) => handleRssDismiss(e, item.id)} aria-label="Dismiss">
+							<button class="yt-dismiss-icon" onclick={(e) => handleRssDismiss(e, item.id)} aria-label="Dismiss">
 								<X size={14} weight="bold" />
 							</button>
 						</li>

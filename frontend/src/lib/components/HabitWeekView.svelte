@@ -22,40 +22,79 @@
   }
 
   const today = new Date().toISOString().split('T')[0];
+
+  let expanded = $state(false);
 </script>
 
 {#if data}
   <div class="week-view">
-    <div class="week-header">
-      <span class="week-label"></span>
-      {#each data.dates as d}
-        <span class="week-day" class:week-today={d === today}>{dayLabel(d)}</span>
-      {/each}
-    </div>
-    {#each Object.entries(data.habits) as [habit, days], hi}
-      <div class="week-row" style="animation-delay: {hi * 50}ms">
-        <span class="week-habit-name">{getHabitLabel(habit)}</span>
-        {#each days as done, i}
-          <span
-            class="week-dot"
-            class:week-dot-done={done}
-            class:week-dot-future={data.dates[i] > today}
-            style="animation-delay: {(hi * 7 + i) * 30}ms"
-          ></span>
+    <button class="week-toggle" onclick={() => expanded = !expanded}>
+      <span class="week-toggle-label">Week</span>
+      <span class="week-toggle-arrow" class:week-toggle-expanded={expanded}>&rsaquo;</span>
+    </button>
+    {#if expanded}
+      <div class="week-content">
+        <div class="week-header">
+          <span class="week-label"></span>
+          {#each data.dates as d}
+            <span class="week-day" class:week-today={d === today}>{dayLabel(d)}</span>
+          {/each}
+        </div>
+        {#each Object.entries(data.habits) as [habit, days], hi}
+          <div class="week-row" style="animation-delay: {hi * 50}ms">
+            <span class="week-habit-name">{getHabitLabel(habit)}</span>
+            {#each days as done, i}
+              <span
+                class="week-dot"
+                class:week-dot-done={done}
+                class:week-dot-future={data.dates[i] > today}
+                style="animation-delay: {(hi * 7 + i) * 30}ms"
+              ></span>
+            {/each}
+          </div>
         {/each}
       </div>
-    {/each}
+    {/if}
   </div>
 {/if}
 
 <style>
   .week-view {
     border-radius: 10px;
-    padding: 16px;
     border: 1px solid var(--border);
     background: var(--card-bg);
     margin-bottom: var(--space-widget);
-    overflow-x: auto;
+    overflow: hidden;
+  }
+
+  .week-toggle {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--text);
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .week-toggle-arrow {
+    color: var(--text-tertiary);
+    transition: transform 0.2s ease;
+    font-size: 18px;
+  }
+
+  .week-toggle-expanded {
+    transform: rotate(90deg);
+  }
+
+  .week-content {
+    padding: 0 16px 16px;
+    animation: fadeSlideIn 0.3s ease;
   }
 
   .week-header,

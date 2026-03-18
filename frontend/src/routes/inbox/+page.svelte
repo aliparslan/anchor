@@ -114,7 +114,7 @@
 	{/if}
 
 	{#if queue.length === 0}
-		<div class="empty">No saved articles</div>
+		<div class="empty">No saved articles<br><span class="empty-hint">Bookmark articles from the Feed tab</span></div>
 	{:else if filteredQueue.length === 0}
 		<div class="empty">{filter === 'unread' ? 'All caught up' : 'No read articles yet'}</div>
 	{:else}
@@ -156,7 +156,7 @@
 		<span class="section-title">Notes</span>
 	</div>
 	{#if captures.length === 0}
-		<div class="empty">No captured notes</div>
+		<div class="empty">No captured notes<br><span class="empty-hint">Tap the + button to capture a thought</span></div>
 	{:else}
 		<div class="inbox-list">
 			{#each captures as capture}
