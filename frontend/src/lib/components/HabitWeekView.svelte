@@ -61,7 +61,6 @@
 <style>
   .week-view {
     border-radius: 10px;
-    border: 1px solid var(--border);
     background: var(--card-bg);
     margin-bottom: var(--space-widget);
     overflow: hidden;

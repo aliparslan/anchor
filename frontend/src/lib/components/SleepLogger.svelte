@@ -111,7 +111,7 @@
   </div>
   {#if sparklineHours.length >= 2}
     <div class="sleep-chart-container">
-      <svg class="sleep-chart" viewBox="0 0 280 48" preserveAspectRatio="none">
+      <svg class="sleep-chart" viewBox="0 0 280 48">
         <polyline points={sparklinePath} fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
         {#each sparklineDots as dot}
           {#if dot.value > 0}
@@ -137,7 +137,6 @@
   .sleep-logger {
     border-radius: 10px;
     padding: 16px;
-    border: 1px solid var(--border);
     background: var(--card-bg);
     margin-bottom: var(--space-widget);
   }

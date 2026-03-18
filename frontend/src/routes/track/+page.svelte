@@ -515,7 +515,6 @@
 	}
 
 	.water-widget {
-		border: 1px solid var(--border);
 		border-radius: 10px;
 		padding: 14px 16px;
 		background: var(--card-bg);
@@ -612,7 +611,6 @@
 		align-items: center;
 		gap: 10px;
 		padding: 10px 14px;
-		border: 1px solid var(--border);
 		border-radius: 8px;
 		background: var(--card-bg);
 		color: var(--accent);

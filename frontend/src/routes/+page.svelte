@@ -16,7 +16,7 @@
 	import Confetti from '$lib/components/Confetti.svelte';
 	import facts from '$lib/facts.json';
 	import {
-		Moon, Sun, Fire, X, Lightbulb,
+		Moon, Sun, Fire, X, Lightbulb, CaretDown,
 		CloudSun, Cloud, CloudRain, CloudSnow, CloudLightning
 	} from 'phosphor-svelte';
 
@@ -259,7 +259,7 @@
 					{weather.rain_chance}% rain
 				</span>
 			{/if}
-			<button class="weather-location" onclick={(e) => { e.stopPropagation(); showZipInput = !showZipInput; }}>{weatherLocation}</button>
+			<button class="weather-location" onclick={(e) => { e.stopPropagation(); showZipInput = !showZipInput; }}>{weatherLocation} <CaretDown size={10} weight="bold" /></button>
 		</div>
 		{#if forecastExpanded && weather?.hourly?.length > 0}
 			<div class="forecast-row">

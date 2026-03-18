@@ -189,8 +189,8 @@
 	.filter-pill {
 		padding: 5px 12px;
 		border-radius: 20px;
-		border: 1px solid var(--border);
-		background: none;
+		border: none;
+		background: var(--bg-secondary);
 		color: var(--text-tertiary);
 		font-family: var(--font-display);
 		font-size: 12px;
@@ -235,15 +235,13 @@
 		align-items: center;
 		gap: 12px;
 		padding: 14px 16px;
-		border: 1px solid var(--border);
 		border-radius: 8px;
 		background: var(--card-bg);
-		transition: box-shadow 0.15s ease, border-color 0.15s ease;
+		transition: box-shadow 0.15s ease;
 	}
 
 	.inbox-item:hover {
 		box-shadow: var(--shadow-hover);
-		border-color: var(--text-tertiary);
 	}
 
 	.inbox-item-read {

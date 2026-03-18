@@ -66,7 +66,6 @@
 <style>
   .weekly-review {
     border-radius: 10px;
-    border: 1px solid var(--border);
     background: var(--card-bg);
     overflow: hidden;
   }
