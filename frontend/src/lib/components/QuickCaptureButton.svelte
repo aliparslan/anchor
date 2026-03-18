@@ -66,8 +66,8 @@
 <style>
   .capture-fab {
     position: fixed;
-    bottom: calc(74px + env(safe-area-inset-bottom, 0px));
-    right: 20px;
+    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    right: 24px;
     width: 44px;
     height: 44px;
     border-radius: 50%;
@@ -106,8 +106,8 @@
 
   .capture-panel {
     position: fixed;
-    bottom: calc(130px + env(safe-area-inset-bottom, 0px));
-    right: 20px;
+    bottom: calc(140px + env(safe-area-inset-bottom, 0px));
+    right: 24px;
     display: flex;
     gap: 8px;
     z-index: 99;

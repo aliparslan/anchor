@@ -3,7 +3,7 @@
 	"short_name": "Base",
 	"start_url": "/",
 	"display": "standalone",
-	"background_color": "#fafaf8",
+	"background_color": "#f5f5f3",
 	"theme_color": "#141414",
 	"icons": [
 		{

@@ -181,7 +181,6 @@
 
 <style>
 	.status-card {
-		border: 1px solid var(--border);
 		border-radius: 10px;
 		padding: 16px;
 		background: var(--card-bg);
@@ -242,7 +241,7 @@
 	.status-bar-fill {
 		height: 100%;
 		border-radius: 3px;
-		background: var(--accent);
+		background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 70%, white));
 		transition: width 0.5s ease;
 	}
 
