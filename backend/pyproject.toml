@@ -6,12 +6,14 @@ requires-python = ">=3.10"
 dependencies = [
     "aiosqlite>=0.22.1",
     "apscheduler>=3.11.2",
-    "beautifulsoup4>=4.14.3",
     "curl-cffi>=0.14.0",
     "fastapi>=0.135.1",
-    "h2>=4.3.0",
     "httpx>=0.28.1",
+    "pydantic>=2.0",
     "uvicorn[standard]>=0.42.0",
     "yt-dlp>=2026.3.13",
     "pywebpush>=2.0.0",
+    "feedparser>=6.0.12",
+    "aiohttp>=3.13.3",
+    "psutil>=7.2.2",
 ]

@@ -50,11 +50,11 @@
 
 <style>
   .week-view {
-    border: 1px solid var(--border);
     border-radius: 10px;
     padding: 16px;
+    border: 1px solid var(--border);
     background: var(--card-bg);
-    margin-bottom: 16px;
+    margin-bottom: var(--space-widget);
     overflow-x: auto;
   }
 
@@ -105,8 +105,8 @@
   }
 
   .week-dot-done {
-    background: var(--color-habits);
-    border-color: var(--color-habits);
+    background: var(--accent);
+    border-color: var(--accent);
   }
 
   .week-dot-future {

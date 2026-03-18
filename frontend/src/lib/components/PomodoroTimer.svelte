@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { completePomodoroSession } from '$lib/api';
+	import { Play, Pause, ArrowCounterClockwise } from 'phosphor-svelte';
 
 	async function requestNotificationPermission() {
 		if ('Notification' in window && Notification.permission === 'default') {
@@ -142,19 +143,13 @@
 	<div class="pomodoro-controls">
 		<button class="pomodoro-btn" onclick={handleStartPause} aria-label={isRunning(state) ? 'Pause' : 'Start'}>
 			{#if isRunning(state)}
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-					<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
-				</svg>
+				<Pause size={16} weight="fill" />
 			{:else}
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
-					<polygon points="6,4 20,12 6,20"/>
-				</svg>
+				<Play size={16} weight="fill" />
 			{/if}
 		</button>
 		<button class="pomodoro-btn" onclick={handleReset} aria-label="Reset">
-			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-				<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-			</svg>
+			<ArrowCounterClockwise size={14} weight="bold" />
 		</button>
 	</div>
 

@@ -1,5 +1,7 @@
 <script lang="ts">
   import { fetchMitToday, saveMit, toggleMit, type Mit } from '$lib/api';
+  import { onDestroy } from 'svelte';
+  import { Check } from 'phosphor-svelte';
 
   let mit = $state<Mit | null>(null);
   let text = $state('');
@@ -19,6 +21,10 @@
     completed = await toggleMit();
   }
 
+  onDestroy(() => {
+    if (saveTimeout) clearTimeout(saveTimeout);
+  });
+
   $effect(() => {
     fetchMitToday().then((data) => {
       mit = data;
@@ -31,7 +37,7 @@
 <div class="mit-card">
   <button class="mit-check" class:mit-check-done={completed} onclick={handleToggle} aria-label="Toggle MIT complete" disabled={!text.trim()}>
     {#if completed}
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <Check size={12} weight="bold" />
     {/if}
   </button>
   <input
@@ -49,9 +55,9 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    border: 1px solid var(--border);
     border-radius: 10px;
     padding: 12px 16px;
+    border: 1px solid var(--border);
     background: var(--card-bg);
     margin-bottom: var(--space-widget);
   }
@@ -77,8 +83,8 @@
   }
 
   .mit-check-done {
-    background: var(--color-habits);
-    border-color: var(--color-habits);
+    background: var(--accent);
+    border-color: var(--accent);
     color: white;
   }
 

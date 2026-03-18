@@ -4,7 +4,7 @@
   let review = $state<WeeklyReview | null>(null);
   let expanded = $state(new Date().getDay() === 0);
 
-  const moodColors = ['', '#c75450', '#d4952a', '#c4a06a', '#3a8fc2', '#3d8b6e'];
+  const moodColors = ['', '#e04545', '#e68a3a', '#c4a06a', '#3b82f6', '#22c55e'];
 
   $effect(() => {
     fetchWeeklyReview().then((data) => (review = data));
@@ -42,7 +42,7 @@
           {#each review.mood_trend as m}
             <span
               class="weekly-mood-dot"
-              style="background: {m ? moodColors[m] : 'var(--bg-inset)'}; border-color: {m ? moodColors[m] : 'var(--border)'}"
+              style={m ? `background: ${moodColors[m]}; border-color: ${moodColors[m]}` : ''}
             ></span>
           {/each}
         </div>
@@ -65,8 +65,8 @@
 
 <style>
   .weekly-review {
-    border: 1px solid var(--border);
     border-radius: 10px;
+    border: 1px solid var(--border);
     background: var(--card-bg);
     overflow: hidden;
   }
@@ -139,7 +139,8 @@
     width: 12px;
     height: 12px;
     border-radius: 50%;
-    border: 1.5px solid;
+    border: 1.5px solid var(--border);
+    background: var(--bg-inset);
     transition: background 0.2s ease;
   }
 
@@ -168,7 +169,7 @@
   .weekly-focus-bar {
     width: 100%;
     border-radius: 3px 3px 0 0;
-    background: var(--color-focus, var(--accent));
+    background: var(--accent);
     min-height: 2px;
     transition: height 0.3s ease;
   }

@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { fetchJournal, saveJournal, fetchJournalDates } from '$lib/api';
+	import { CaretLeft, CaretRight } from 'phosphor-svelte';
 
 	let content = $state('');
 	let savedIndicator = $state(false);
@@ -8,6 +9,7 @@
 	let indicatorTimeout: ReturnType<typeof setTimeout> | null = null;
 	let dates = $state<string[]>([]);
 	let currentDate = $state(new Date().toISOString().split('T')[0]);
+	let showPastEntries = $state(false);
 
 	const isToday = $derived(currentDate === new Date().toISOString().split('T')[0]);
 
@@ -51,6 +53,11 @@
 		}, 1500);
 	}
 
+	onDestroy(() => {
+		if (saveTimeout) clearTimeout(saveTimeout);
+		if (indicatorTimeout) clearTimeout(indicatorTimeout);
+	});
+
 	onMount(async () => {
 		await loadEntry();
 		try {
@@ -64,11 +71,11 @@
 		<span class="section-title">Journal</span>
 		<div class="journal-nav">
 			<button class="journal-nav-btn" onclick={() => navigateDay(-1)} aria-label="Previous day">
-				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+				<CaretLeft size={14} weight="bold" />
 			</button>
 			<span class="journal-date">{isToday ? 'Today' : formatDate(currentDate)}</span>
 			<button class="journal-nav-btn" onclick={() => navigateDay(1)} disabled={isToday} aria-label="Next day">
-				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+				<CaretRight size={14} weight="bold" />
 			</button>
 		</div>
 		{#if savedIndicator}
@@ -82,4 +89,73 @@
 		placeholder={isToday ? "What's on your mind today?" : "No entry for this day"}
 		rows="4"
 	></textarea>
+	{#if dates.length > 1}
+		<button class="journal-past-toggle" onclick={() => showPastEntries = !showPastEntries}>
+			{showPastEntries ? 'Hide' : 'Recent'} entries ({dates.length})
+		</button>
+		{#if showPastEntries}
+			<div class="journal-past-list">
+				{#each dates.slice(0, 10) as d}
+					<button
+						class="journal-past-item"
+						class:journal-past-active={d === currentDate}
+						onclick={() => { currentDate = d; loadEntry(); showPastEntries = false; }}
+					>
+						{new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+					</button>
+				{/each}
+			</div>
+		{/if}
+	{/if}
 </div>
+
+<style>
+	.journal-past-toggle {
+		display: block;
+		width: 100%;
+		padding: 8px;
+		margin-top: 8px;
+		border: none;
+		border-top: 1px solid var(--border);
+		background: none;
+		color: var(--text-tertiary);
+		font-family: var(--font-mono);
+		font-size: 11px;
+		cursor: pointer;
+		transition: color 0.15s ease;
+	}
+
+	.journal-past-toggle:hover {
+		color: var(--text-secondary);
+	}
+
+	.journal-past-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		padding-top: 8px;
+	}
+
+	.journal-past-item {
+		padding: 4px 10px;
+		border-radius: 14px;
+		border: 1px solid var(--border);
+		background: none;
+		color: var(--text-secondary);
+		font-family: var(--font-mono);
+		font-size: 11px;
+		cursor: pointer;
+		transition: all 0.15s ease;
+	}
+
+	.journal-past-item:hover {
+		border-color: var(--text-tertiary);
+		color: var(--text);
+	}
+
+	.journal-past-active {
+		background: var(--accent);
+		border-color: var(--accent);
+		color: white;
+	}
+</style>

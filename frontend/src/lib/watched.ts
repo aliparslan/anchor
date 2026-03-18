@@ -1,7 +1,10 @@
 const WATCHED_KEY = 'base:watched_videos';
 const READ_HN_KEY = 'base:read_hn';
 
-function getSet(key: string): Set<string> {
+let watchedCache: Set<string> | null = null;
+let readHnCache: Set<string> | null = null;
+
+function loadSet(key: string): Set<string> {
 	try {
 		const data = localStorage.getItem(key);
 		return data ? new Set(JSON.parse(data)) : new Set();
@@ -15,21 +18,23 @@ function saveSet(key: string, set: Set<string>) {
 }
 
 export function isWatched(videoId: string): boolean {
-	return getSet(WATCHED_KEY).has(videoId);
+	if (!watchedCache) watchedCache = loadSet(WATCHED_KEY);
+	return watchedCache.has(videoId);
 }
 
 export function markWatched(videoId: string) {
-	const set = getSet(WATCHED_KEY);
-	set.add(videoId);
-	saveSet(WATCHED_KEY, set);
+	if (!watchedCache) watchedCache = loadSet(WATCHED_KEY);
+	watchedCache.add(videoId);
+	saveSet(WATCHED_KEY, watchedCache);
 }
 
 export function isHnRead(hnId: string): boolean {
-	return getSet(READ_HN_KEY).has(hnId);
+	if (!readHnCache) readHnCache = loadSet(READ_HN_KEY);
+	return readHnCache.has(hnId);
 }
 
 export function markHnRead(hnId: string) {
-	const set = getSet(READ_HN_KEY);
-	set.add(hnId);
-	saveSet(READ_HN_KEY, set);
+	if (!readHnCache) readHnCache = loadSet(READ_HN_KEY);
+	readHnCache.add(hnId);
+	saveSet(READ_HN_KEY, readHnCache);
 }

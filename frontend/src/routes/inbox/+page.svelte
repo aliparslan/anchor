@@ -1,24 +1,20 @@
 <script lang="ts">
 	import {
-		fetchReadingQueue, markQueueItemRead, deleteQueueItem,
+		fetchReadingQueue, markQueueItemRead, markQueueItemUnread, deleteQueueItem,
 		fetchCaptures, archiveCapture, deleteCapture,
 		type ReadingQueueItem, type Capture
 	} from '$lib/api';
+	import { timeAgo } from '$lib/utils';
 	import { theme, toggleTheme } from '$lib/theme';
+	import { getCached, setCached, clearCached } from '$lib/cache';
+	import { onDestroy } from 'svelte';
+	import { Check, X, Moon, Sun, Eye, EyeSlash } from 'phosphor-svelte';
 
-	let queue = $state<ReadingQueueItem[]>([]);
-	let captures = $state<Capture[]>([]);
+	const _c = getCached<any>('inbox');
 
-	function timeAgo(isoStr: string): string {
-		if (!isoStr) return '';
-		const diff = Date.now() - new Date(isoStr).getTime();
-		const mins = Math.floor(diff / 60000);
-		if (mins < 1) return 'just now';
-		if (mins < 60) return `${mins}m ago`;
-		const hrs = Math.floor(mins / 60);
-		if (hrs < 24) return `${hrs}h ago`;
-		return `${Math.floor(hrs / 24)}d ago`;
-	}
+	let queue = $state<ReadingQueueItem[]>(_c?.queue ?? []);
+	let captures = $state<Capture[]>(_c?.captures ?? []);
+	let filter = $state<'all' | 'unread' | 'read'>('unread');
 
 	function getDomain(url: string): string {
 		try {
@@ -34,11 +30,24 @@
 		queue = queue.map((q) => q.id === item.id ? { ...q, read_at: new Date().toISOString() } : q);
 	}
 
+	async function handleToggleRead(e: MouseEvent, item: ReadingQueueItem) {
+		e.stopPropagation();
+		e.preventDefault();
+		if (item.read_at) {
+			await markQueueItemUnread(item.id);
+			queue = queue.map((q) => q.id === item.id ? { ...q, read_at: null } : q);
+		} else {
+			await markQueueItemRead(item.id);
+			queue = queue.map((q) => q.id === item.id ? { ...q, read_at: new Date().toISOString() } : q);
+		}
+	}
+
 	async function handleQueueDelete(e: MouseEvent, id: number) {
 		e.stopPropagation();
 		e.preventDefault();
 		await deleteQueueItem(id);
 		queue = queue.filter((q) => q.id !== id);
+		clearCached('home');
 	}
 
 	async function handleArchiveCapture(id: number) {
@@ -52,20 +61,34 @@
 	}
 
 	$effect(() => {
+		if (_c) return;
 		Promise.all([fetchReadingQueue(), fetchCaptures()]).then(([q, c]) => {
 			queue = q;
 			captures = c;
 		});
 	});
+
+	onDestroy(() => {
+		setCached('inbox', { queue, captures });
+	});
+
+	const filteredQueue = $derived(
+		filter === 'all' ? queue
+		: filter === 'unread' ? queue.filter((q) => !q.read_at)
+		: queue.filter((q) => q.read_at)
+	);
+
+	const unreadCount = $derived(queue.filter((q) => !q.read_at).length);
+	const readCount = $derived(queue.filter((q) => q.read_at).length);
 </script>
 
 <div class="page-header">
 	<h1 class="greeting">Inbox</h1>
 	<button class="theme-toggle" onclick={toggleTheme} aria-label="Toggle theme">
 		{#if $theme === 'light'}
-			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+			<Moon size={18} weight="duotone" />
 		{:else}
-			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+			<Sun size={18} weight="duotone" />
 		{/if}
 	</button>
 </div>
@@ -73,13 +96,30 @@
 <!-- Reading Queue -->
 <div class="home-section">
 	<div class="section-header">
-		<span class="section-title title-inbox">Reading Queue</span>
+		<span class="section-title">Reading Queue</span>
 	</div>
+
+	{#if queue.length > 0}
+		<div class="filter-pills">
+			<button class="filter-pill" class:filter-active={filter === 'unread'} onclick={() => filter = 'unread'}>
+				Unread{#if unreadCount > 0} <span class="filter-count">{unreadCount}</span>{/if}
+			</button>
+			<button class="filter-pill" class:filter-active={filter === 'read'} onclick={() => filter = 'read'}>
+				Read{#if readCount > 0} <span class="filter-count">{readCount}</span>{/if}
+			</button>
+			<button class="filter-pill" class:filter-active={filter === 'all'} onclick={() => filter = 'all'}>
+				All
+			</button>
+		</div>
+	{/if}
+
 	{#if queue.length === 0}
 		<div class="empty">No saved articles</div>
+	{:else if filteredQueue.length === 0}
+		<div class="empty">{filter === 'unread' ? 'All caught up' : 'No read articles yet'}</div>
 	{:else}
 		<div class="inbox-list">
-			{#each queue as item}
+			{#each filteredQueue as item}
 				<div class="inbox-item" class:inbox-item-read={item.read_at !== null}>
 					<div class="inbox-item-content">
 						<a href={item.url} target="_blank" rel="noopener" class="inbox-item-title" onclick={() => handleQueueClick(item)}>
@@ -92,9 +132,18 @@
 						</a>
 						<span class="inbox-item-time">saved {timeAgo(item.saved_at)}</span>
 					</div>
-					<button class="inbox-item-remove" onclick={(e) => handleQueueDelete(e, item.id)} aria-label="Remove">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-					</button>
+					<div class="inbox-item-actions">
+						<button class="inbox-action-btn inbox-action-eye" onclick={(e) => handleToggleRead(e, item)} aria-label={item.read_at ? 'Mark unread' : 'Mark read'}>
+							{#if item.read_at}
+								<EyeSlash size={16} weight="duotone" />
+							{:else}
+								<Eye size={16} weight="duotone" />
+							{/if}
+						</button>
+						<button class="inbox-action-btn inbox-action-delete" onclick={(e) => handleQueueDelete(e, item.id)} aria-label="Remove">
+							<X size={16} weight="bold" />
+						</button>
+					</div>
 				</div>
 			{/each}
 		</div>
@@ -104,7 +153,7 @@
 <!-- Captured Notes -->
 <div class="home-section">
 	<div class="section-header">
-		<span class="section-title title-inbox">Notes</span>
+		<span class="section-title">Notes</span>
 	</div>
 	{#if captures.length === 0}
 		<div class="empty">No captured notes</div>
@@ -117,11 +166,11 @@
 						<span class="inbox-item-time">{timeAgo(capture.created_at)}</span>
 					</div>
 					<div class="inbox-item-actions">
-						<button class="inbox-action-btn inbox-action-archive" onclick={() => handleArchiveCapture(capture.id)} aria-label="Archive">
-							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+						<button class="inbox-action-btn" onclick={() => handleArchiveCapture(capture.id)} aria-label="Archive">
+							<Check size={16} weight="bold" />
 						</button>
 						<button class="inbox-action-btn inbox-action-delete" onclick={() => handleDeleteCapture(capture.id)} aria-label="Delete">
-							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+							<X size={16} weight="bold" />
 						</button>
 					</div>
 				</div>
@@ -131,10 +180,54 @@
 </div>
 
 <style>
-	.inbox-list {
+	.filter-pills {
+		display: flex;
+		gap: 6px;
+		margin-bottom: 14px;
+	}
+
+	.filter-pill {
+		padding: 5px 12px;
+		border-radius: 20px;
 		border: 1px solid var(--border);
-		border-radius: 10px;
-		overflow: hidden;
+		background: none;
+		color: var(--text-tertiary);
+		font-family: var(--font-display);
+		font-size: 12px;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.15s ease;
+		display: flex;
+		align-items: center;
+		gap: 5px;
+	}
+
+	.filter-pill:hover {
+		border-color: var(--text-tertiary);
+		color: var(--text-secondary);
+	}
+
+	.filter-active {
+		background: var(--accent);
+		border-color: var(--accent);
+		color: white;
+	}
+
+	.filter-active:hover {
+		background: var(--accent-hover);
+		border-color: var(--accent-hover);
+		color: white;
+	}
+
+	.filter-count {
+		font-family: var(--font-mono);
+		font-size: 11px;
+	}
+
+	.inbox-list {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
 	}
 
 	.inbox-item {
@@ -142,20 +235,23 @@
 		align-items: center;
 		gap: 12px;
 		padding: 14px 16px;
-		border-bottom: 1px solid var(--border);
-		transition: background 0.1s ease;
-	}
-
-	.inbox-item:last-child {
-		border-bottom: none;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		background: var(--card-bg);
+		transition: box-shadow 0.15s ease, border-color 0.15s ease;
 	}
 
 	.inbox-item:hover {
-		background: var(--bg-hover);
+		box-shadow: var(--shadow-hover);
+		border-color: var(--text-tertiary);
 	}
 
 	.inbox-item-read {
 		opacity: 0.5;
+	}
+
+	.inbox-item-read:hover {
+		opacity: 0.7;
 	}
 
 	.inbox-item-content {
@@ -196,42 +292,10 @@
 		color: var(--text);
 	}
 
-	.inbox-item-remove {
-		flex-shrink: 0;
-		width: 28px;
-		height: 28px;
-		border-radius: 6px;
-		border: none;
-		background: none;
-		color: var(--text-tertiary);
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		opacity: 0;
-		transition: all 0.15s ease;
-		padding: 0;
-	}
-
-	.inbox-item:hover .inbox-item-remove {
-		opacity: 1;
-	}
-
-	.inbox-item-remove:hover {
-		background: var(--bg-hover);
-		color: var(--text);
-	}
-
 	.inbox-item-actions {
 		display: flex;
 		gap: 4px;
 		flex-shrink: 0;
-		opacity: 0;
-		transition: opacity 0.15s ease;
-	}
-
-	.inbox-item:hover .inbox-item-actions {
-		opacity: 1;
 	}
 
 	.inbox-action-btn {
@@ -251,15 +315,18 @@
 
 	.inbox-action-btn:hover {
 		background: var(--bg-hover);
-		color: var(--color-habits);
+		color: var(--accent);
 	}
 
 	.inbox-action-delete:hover {
-		color: var(--color-yt);
+		color: var(--text);
+	}
+
+	.inbox-action-eye {
+		color: var(--text-tertiary);
 	}
 
 	@media (max-width: 600px) {
-		.inbox-item-remove,
 		.inbox-item-actions {
 			opacity: 1;
 		}

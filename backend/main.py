@@ -1,16 +1,22 @@
+import aiohttp
 import asyncio
 import base64
 from contextlib import asynccontextmanager
 from datetime import date
+import json
 from pathlib import Path
+import platform
+import time
+
+import psutil
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import serialization
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pywebpush import webpush, WebPushException
 
 from db import (
@@ -39,8 +45,11 @@ from db import (
     save_to_reading_queue,
     mark_queue_item_read,
     delete_queue_item,
+    delete_queue_item_by_hn_id,
+    mark_queue_item_unread,
     get_sleep_log,
     save_sleep_log,
+    get_sleep_week,
     get_workout,
     toggle_workout,
     save_workout_note,
@@ -57,12 +66,25 @@ from db import (
     get_custom_habits,
     add_custom_habit,
     delete_custom_habit,
+    get_focus_month,
+    get_streak,
+    get_daily_score,
+    seed_rss_feeds,
+    get_rss_items,
+    get_water_today,
+    increment_water,
+    decrement_water,
+    get_gratitudes,
+    save_gratitude,
+    get_random_gratitude,
+    search_all,
+    get_achievements,
+    check_achievements,
 )
 from hn import fetch_top_hn_posts
 from youtube import fetch_youtube_recommendations
+from rss import fetch_all_feeds
 from weather import geocode_zip, fetch_weather
-
-import json
 
 VAPID_PRIVATE_KEY: str | None = None
 VAPID_PUBLIC_KEY: str | None = None
@@ -100,17 +122,18 @@ async def send_push_to_all(title: str, body: str):
         return
     subs = await get_push_subscriptions()
     payload = json.dumps({"title": title, "body": body})
+    loop = asyncio.get_event_loop()
     for sub in subs:
         try:
-            webpush(
+            await loop.run_in_executor(None, lambda s=sub: webpush(
                 subscription_info={
-                    "endpoint": sub["endpoint"],
-                    "keys": {"p256dh": sub["p256dh"], "auth": sub["auth"]},
+                    "endpoint": s["endpoint"],
+                    "keys": {"p256dh": s["p256dh"], "auth": s["auth"]},
                 },
                 data=payload,
                 vapid_private_key=VAPID_PRIVATE_KEY,
                 vapid_claims={"sub": "mailto:noreply@base.local"},
-            )
+            ))
         except WebPushException as e:
             print(f"[Push] Failed to send to {sub['endpoint'][:40]}...: {e}")
             if e.response and e.response.status_code in (404, 410):
@@ -152,15 +175,19 @@ class WorkoutNoteBody(BaseModel):
 
 
 class MoodBody(BaseModel):
-    mood: int
+    mood: int = Field(ge=1, le=5)
 
 
 class CaptureBody(BaseModel):
     text: str
 
 
+class GratitudeBody(BaseModel):
+    text: str
+
+
 class CustomHabitBody(BaseModel):
-    name: str
+    name: str = Field(min_length=1, max_length=100)
 
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend" / "build"
 
@@ -171,10 +198,11 @@ async def scheduled_fetch(notify: bool = True):
     print("[Scheduler] Running scheduled fetch...")
     results = await asyncio.gather(
         fetch_top_hn_posts(),
-        fetch_youtube_recommendations(),
+        fetch_youtube_recommendations(count=30),
+        fetch_all_feeds(),
         return_exceptions=True,
     )
-    for name, result in zip(["HN", "YouTube"], results):
+    for name, result in zip(["HN", "YouTube", "RSS"], results):
         if isinstance(result, Exception):
             print(f"[Scheduler] {name} fetch failed: {result}")
     if notify:
@@ -186,6 +214,7 @@ async def lifespan(app: FastAPI):
     await init_db()
     print("[Base] Database initialized")
     await load_or_create_vapid_keys()
+    await seed_rss_feeds()
 
     # Run initial fetch in background (no notification on startup)
     asyncio.create_task(scheduled_fetch(notify=False))
@@ -218,7 +247,7 @@ async def api_hn():
 
 @app.get("/api/youtube")
 async def api_youtube():
-    videos = await get_latest_youtube_videos()
+    videos = await get_latest_youtube_videos(limit=30)
     return {"videos": videos}
 
 
@@ -230,8 +259,21 @@ async def refresh_hn():
 
 @app.post("/api/refresh/youtube")
 async def refresh_youtube():
-    videos = await fetch_youtube_recommendations()
+    videos = await fetch_youtube_recommendations(count=30)
     return {"videos": videos, "refreshed": True}
+
+
+@app.get("/api/rss")
+async def api_rss():
+    items = await get_rss_items(limit=50)
+    return {"items": items}
+
+
+@app.post("/api/refresh/rss")
+async def api_refresh_rss():
+    await fetch_all_feeds()
+    items = await get_rss_items(limit=50)
+    return {"items": items, "refreshed": True}
 
 
 @app.get("/api/journal/dates")
@@ -249,6 +291,10 @@ async def api_journal_today():
 
 @app.get("/api/journal/{entry_date}")
 async def api_journal_by_date(entry_date: str):
+    try:
+        date.fromisoformat(entry_date)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid date format")
     entry = await get_journal_entry(entry_date)
     return {"entry": entry}
 
@@ -262,6 +308,10 @@ async def api_save_journal_today(body: JournalBody):
 
 @app.put("/api/journal/{entry_date}")
 async def api_save_journal(entry_date: str, body: JournalBody):
+    try:
+        date.fromisoformat(entry_date)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid date format")
     entry = await save_journal_entry(entry_date, body.content)
     return {"entry": entry}
 
@@ -298,7 +348,7 @@ async def api_weather():
 async def api_set_zip(body: ZipBody):
     coords = await geocode_zip(body.zip_code)
     if not coords:
-        return {"error": "Could not find location", "zip_code": body.zip_code}
+        raise HTTPException(status_code=404, detail="Could not find location")
     await save_setting("weather_zip", body.zip_code)
     await save_setting("weather_coords", json.dumps(coords))
     weather = await fetch_weather(coords["lat"], coords["lon"])
@@ -445,7 +495,26 @@ async def api_delete_queue_item(item_id: int):
     return {"ok": True}
 
 
+@app.delete("/api/reading-queue/by-hn/{hn_id}")
+async def api_delete_queue_by_hn(hn_id: int):
+    await delete_queue_item_by_hn_id(hn_id)
+    return {"ok": True}
+
+
+@app.post("/api/reading-queue/{item_id}/unread")
+async def api_mark_queue_unread(item_id: int):
+    await mark_queue_item_unread(item_id)
+    return {"ok": True}
+
+
 # --- Sleep ---
+
+
+@app.get("/api/sleep/week")
+async def api_sleep_week():
+    today = date.today().isoformat()
+    days = await get_sleep_week(today)
+    return {"days": days}
 
 
 @app.get("/api/sleep/today")
@@ -552,10 +621,232 @@ async def api_habits_streaks():
     return {"streaks": streaks}
 
 
+@app.get("/api/focus/month")
+async def api_focus_month():
+    today = date.today().isoformat()
+    days = await get_focus_month(today)
+    return {"days": days}
+
+
+@app.get("/api/streak")
+async def api_streak():
+    today = date.today().isoformat()
+    streak = await get_streak(today)
+    return {"streak": streak}
+
+
+@app.get("/api/score/today")
+async def api_score_today():
+    today = date.today().isoformat()
+    return await get_daily_score(today)
+
+
 @app.get("/api/review/week")
 async def api_review_week():
     today = date.today().isoformat()
     return await get_weekly_review(today)
+
+
+# --- Status ---
+
+
+@app.get("/api/status/system")
+async def api_system_status():
+    hostname = platform.node()
+
+    # Uptime
+    boot_time = psutil.boot_time()
+    uptime_seconds = int(time.time() - boot_time)
+    days = uptime_seconds // 86400
+    hours = (uptime_seconds % 86400) // 3600
+    mins = (uptime_seconds % 3600) // 60
+    uptime_str = f"{days}d {hours}h {mins}m" if days > 0 else f"{hours}h {mins}m"
+
+    # CPU
+    cpu_percent = await asyncio.get_event_loop().run_in_executor(
+        None, lambda: psutil.cpu_percent(interval=0.5)
+    )
+
+    # Memory
+    mem = psutil.virtual_memory()
+
+    # Disk
+    # On macOS, "/" reports APFS container size; use home dir for user-accessible space
+    if platform.system() == "Darwin":
+        disk = psutil.disk_usage(str(Path.home()))
+    else:
+        disk = psutil.disk_usage("/")
+
+    return {
+        "hostname": hostname,
+        "uptime": uptime_str,
+        "cpu_percent": round(cpu_percent, 1),
+        "memory": {
+            "total_gb": round(mem.total / (1024**3), 1),
+            "used_gb": round(mem.used / (1024**3), 1),
+            "percent": mem.percent,
+        },
+        "disk": {
+            "total_gb": round(disk.total / (1024**3), 1),
+            "used_gb": round(disk.used / (1024**3), 1),
+            "percent": round(disk.percent, 1),
+        },
+    }
+
+
+@app.get("/api/status/claude")
+async def api_claude_status():
+    stats_path = Path.home() / ".claude" / "stats-cache.json"
+    if not stats_path.exists():
+        return {"available": False}
+    try:
+        data = json.loads(stats_path.read_text())
+        return {
+            "available": True,
+            "total_messages": data.get("totalMessages", 0),
+            "total_sessions": data.get("totalSessions", 0),
+            "daily_activity": data.get("dailyActivity", [])[-7:],
+            "model_usage": data.get("modelUsage", {}),
+            "last_computed": data.get("lastComputedDate", ""),
+        }
+    except Exception:
+        return {"available": False}
+
+
+@app.get("/api/status/tailscale")
+async def api_tailscale_status():
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "tailscale", "status", "--json",
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
+        try:
+            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=5)
+        except asyncio.TimeoutError:
+            return {"available": False}
+        if proc.returncode != 0:
+            return {"available": False}
+        data = json.loads(stdout.decode())
+        peers = []
+        for peer_id, peer in data.get("Peer", {}).items():
+            peers.append({
+                "hostname": peer.get("HostName", ""),
+                "os": peer.get("OS", ""),
+                "online": peer.get("Online", False),
+                "ip": peer.get("TailscaleIPs", [""])[0] if peer.get("TailscaleIPs") else "",
+            })
+        self_node = data.get("Self", {})
+        return {
+            "available": True,
+            "self": {
+                "hostname": self_node.get("HostName", ""),
+                "ip": self_node.get("TailscaleIPs", [""])[0] if self_node.get("TailscaleIPs") else "",
+                "online": True,
+            },
+            "peers": peers,
+        }
+    except Exception:
+        return {"available": False}
+
+
+# --- Water ---
+
+
+@app.get("/api/water/today")
+async def api_water_today():
+    today = date.today().isoformat()
+    glasses = await get_water_today(today)
+    return {"glasses": glasses}
+
+@app.post("/api/water/increment")
+async def api_water_increment():
+    today = date.today().isoformat()
+    glasses = await increment_water(today)
+    return {"glasses": glasses}
+
+@app.post("/api/water/decrement")
+async def api_water_decrement():
+    today = date.today().isoformat()
+    glasses = await decrement_water(today)
+    return {"glasses": glasses}
+
+
+# --- Gratitude ---
+
+
+@app.get("/api/gratitude")
+async def api_gratitudes():
+    items = await get_gratitudes()
+    return {"items": items}
+
+@app.post("/api/gratitude")
+async def api_save_gratitude(body: GratitudeBody):
+    item = await save_gratitude(body.text)
+    return {"item": item}
+
+@app.get("/api/gratitude/random")
+async def api_random_gratitude():
+    item = await get_random_gratitude()
+    return {"item": item}
+
+
+# --- Search ---
+
+
+@app.get("/api/search")
+async def api_search(q: str = ""):
+    if not q.strip():
+        return {"results": {"journal": [], "captures": [], "queue": [], "rss": []}}
+    results = await search_all(q.strip())
+    return {"results": results}
+
+
+# --- Dashboard Age ---
+
+
+@app.get("/api/status/age")
+async def api_dashboard_age():
+    first_launch = await get_setting("first_launch_date")
+    if not first_launch:
+        today = date.today().isoformat()
+        await save_setting("first_launch_date", today)
+        first_launch = today
+    days = (date.today() - date.fromisoformat(first_launch)).days
+    return {"days": days, "since": first_launch}
+
+
+# --- ISS Tracker ---
+
+
+@app.get("/api/status/iss")
+async def api_iss_status():
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get("http://api.open-notify.org/iss-now.json", timeout=aiohttp.ClientTimeout(total=5)) as resp:
+                if resp.status != 200:
+                    return {"available": False}
+                data = await resp.json()
+                pos = data.get("iss_position", {})
+                return {
+                    "available": True,
+                    "latitude": float(pos.get("latitude", 0)),
+                    "longitude": float(pos.get("longitude", 0)),
+                    "timestamp": data.get("timestamp", 0),
+                }
+    except Exception as e:
+        print(f"[ISS] Error: {e}")
+        return {"available": False}
+
+
+# --- Achievements ---
+
+
+@app.get("/api/achievements")
+async def api_achievements():
+    today = date.today().isoformat()
+    newly_awarded = await check_achievements(today)
+    all_achievements = await get_achievements()
+    return {"achievements": all_achievements, "new": newly_awarded}
 
 
 # Serve frontend static files (production)

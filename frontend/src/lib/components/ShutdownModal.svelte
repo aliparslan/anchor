@@ -1,5 +1,6 @@
 <script lang="ts">
   import { fetchDaySummary, type DaySummary } from '$lib/api';
+  import { Check } from 'phosphor-svelte';
 
   let { open = false, onclose }: { open: boolean; onclose: () => void } = $props();
   let summary = $state<DaySummary | null>(null);
@@ -27,6 +28,8 @@
   }
 </script>
 
+<svelte:window onkeydown={(e) => { if (open && e.key === 'Escape') onclose(); }} />
+
 {#if open}
   <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
   <div class="shutdown-overlay" onclick={onclose}>
@@ -40,7 +43,7 @@
           <div class="shutdown-row">
             <div class="shutdown-check" class:shutdown-check-done={summary.mit?.completed}>
               {#if summary.mit?.completed}
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <Check size={12} weight="bold" />
               {/if}
             </div>
             <div class="shutdown-detail">
@@ -53,7 +56,7 @@
           <div class="shutdown-row">
             <div class="shutdown-check" class:shutdown-check-done={summary.focus_minutes >= 240}>
               {#if summary.focus_minutes >= 240}
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <Check size={12} weight="bold" />
               {/if}
             </div>
             <div class="shutdown-detail">
@@ -63,11 +66,11 @@
           </div>
 
           <!-- Habits -->
-          {#each summary.habits as habit}
+          {#each summary.habits.filter(h => h.name !== 'focus') as habit}
             <div class="shutdown-row">
               <div class="shutdown-check" class:shutdown-check-done={habit.done}>
                 {#if habit.done}
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  <Check size={12} weight="bold" />
                 {/if}
               </div>
               <div class="shutdown-detail">
@@ -80,7 +83,7 @@
           <div class="shutdown-row">
             <div class="shutdown-check" class:shutdown-check-done={summary.journal_written}>
               {#if summary.journal_written}
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                <Check size={12} weight="bold" />
               {/if}
             </div>
             <div class="shutdown-detail">
@@ -117,6 +120,7 @@
     max-width: 380px;
     width: 100%;
     animation: modalSlideUp 0.3s ease;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
   }
 
   .shutdown-title {
@@ -156,8 +160,8 @@
   }
 
   .shutdown-check-done {
-    background: var(--color-habits);
-    border-color: var(--color-habits);
+    background: var(--accent);
+    border-color: var(--accent);
   }
 
   .shutdown-detail {

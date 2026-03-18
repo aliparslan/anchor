@@ -1,5 +1,5 @@
 import aiosqlite
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from pathlib import Path
 
 DATA_DIR = Path(__file__).parent.parent / "data"
@@ -126,6 +126,50 @@ async def init_db():
                 name TEXT NOT NULL UNIQUE,
                 created_at TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS rss_feeds (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                feed_url TEXT NOT NULL UNIQUE,
+                site_url TEXT,
+                last_fetched_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS rss_items (
+                id INTEGER PRIMARY KEY,
+                feed_id INTEGER NOT NULL REFERENCES rss_feeds(id),
+                title TEXT NOT NULL,
+                url TEXT NOT NULL,
+                author TEXT,
+                published_at TEXT,
+                fetched_at TEXT NOT NULL,
+                guid TEXT UNIQUE
+            );
+
+            CREATE TABLE IF NOT EXISTS water_log (
+                date TEXT PRIMARY KEY,
+                glasses INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE TABLE IF NOT EXISTS gratitude_jar (
+                id INTEGER PRIMARY KEY,
+                text TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS achievements (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL UNIQUE,
+                description TEXT NOT NULL,
+                earned_at TEXT NOT NULL
+            );
+        """)
+        await db.execute("PRAGMA journal_mode=WAL")
+        await db.execute("PRAGMA foreign_keys=ON")
+        await db.executescript("""
+            CREATE INDEX IF NOT EXISTS idx_pomodoro_date ON pomodoro_sessions(date);
+            CREATE INDEX IF NOT EXISTS idx_rss_published ON rss_items(published_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_capture_archived ON quick_capture(archived_at);
         """)
         await db.commit()
     finally:
@@ -238,7 +282,7 @@ async def get_journal_entry(entry_date: str) -> dict | None:
 
 
 async def save_journal_entry(entry_date: str, content: str) -> dict:
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     db = await get_db()
     try:
         await db.execute(
@@ -266,7 +310,7 @@ async def get_pomodoro_sessions(session_date: str) -> list[dict]:
 
 
 async def save_pomodoro_session(session_date: str, duration_minutes: int = 25) -> dict:
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     db = await get_db()
     try:
         await db.execute(
@@ -333,7 +377,7 @@ async def get_pomodoro_total(session_date: str) -> int:
 
 
 async def dismiss_video(video_id: str):
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     db = await get_db()
     try:
         await db.execute(
@@ -356,7 +400,7 @@ async def get_dismissed_video_ids() -> list[str]:
 
 
 async def save_push_subscription(endpoint: str, p256dh: str, auth: str):
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     db = await get_db()
     try:
         await db.execute(
@@ -426,7 +470,7 @@ async def get_mit(entry_date: str) -> dict | None:
 
 
 async def save_mit(entry_date: str, text: str) -> dict:
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     db = await get_db()
     try:
         await db.execute(
@@ -452,7 +496,7 @@ async def toggle_mit(entry_date: str) -> bool:
         )
         row = await cursor.fetchone()
         new_val = 0 if (row and row["completed"]) else 1
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         if row:
             await db.execute(
                 "UPDATE daily_mit SET completed = ?, updated_at = ? WHERE date = ?",
@@ -485,7 +529,7 @@ async def get_reading_queue() -> list[dict]:
 
 
 async def save_to_reading_queue(hn_id: int | None, title: str, url: str, domain: str | None) -> dict:
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     db = await get_db()
     try:
         cursor = await db.execute(
@@ -503,7 +547,7 @@ async def save_to_reading_queue(hn_id: int | None, title: str, url: str, domain:
 
 
 async def mark_queue_item_read(item_id: int):
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     db = await get_db()
     try:
         await db.execute(
@@ -519,6 +563,41 @@ async def delete_queue_item(item_id: int):
     try:
         await db.execute("DELETE FROM reading_queue WHERE id = ?", (item_id,))
         await db.commit()
+    finally:
+        await db.close()
+
+
+async def delete_queue_item_by_hn_id(hn_id: int):
+    db = await get_db()
+    try:
+        await db.execute("DELETE FROM reading_queue WHERE hn_id = ?", (hn_id,))
+        await db.commit()
+    finally:
+        await db.close()
+
+
+async def mark_queue_item_unread(item_id: int):
+    db = await get_db()
+    try:
+        await db.execute("UPDATE reading_queue SET read_at = NULL WHERE id = ?", (item_id,))
+        await db.commit()
+    finally:
+        await db.close()
+
+
+async def get_sleep_week(today_str: str) -> list[dict]:
+    today = date.fromisoformat(today_str)
+    start = (today - timedelta(days=29)).isoformat()
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            """SELECT date, bedtime, wake_time FROM sleep_log
+               WHERE date >= ? AND date <= ?
+               ORDER BY date ASC""",
+            (start, today_str),
+        )
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
     finally:
         await db.close()
 
@@ -539,7 +618,7 @@ async def get_sleep_log(entry_date: str) -> dict | None:
 
 
 async def save_sleep_log(entry_date: str, bedtime: str, wake_time: str) -> dict:
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     db = await get_db()
     try:
         await db.execute(
@@ -576,7 +655,7 @@ async def toggle_workout(entry_date: str) -> bool:
         )
         row = await cursor.fetchone()
         new_val = 0 if (row and row["completed"]) else 1
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         if row:
             await db.execute(
                 "UPDATE workout_log SET completed = ?, updated_at = ? WHERE date = ?",
@@ -594,7 +673,7 @@ async def toggle_workout(entry_date: str) -> bool:
 
 
 async def save_workout_note(entry_date: str, note: str) -> dict:
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     db = await get_db()
     try:
         cursor = await db.execute(
@@ -635,7 +714,7 @@ async def get_mood(entry_date: str) -> dict | None:
 
 
 async def save_mood(entry_date: str, mood: int) -> dict:
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     db = await get_db()
     try:
         await db.execute(
@@ -665,7 +744,7 @@ async def get_captures() -> list[dict]:
 
 
 async def save_capture(text: str) -> dict:
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     db = await get_db()
     try:
         cursor = await db.execute(
@@ -680,7 +759,7 @@ async def save_capture(text: str) -> dict:
 
 
 async def archive_capture(capture_id: int):
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     db = await get_db()
     try:
         await db.execute(
@@ -716,7 +795,7 @@ async def get_custom_habits() -> list[dict]:
 
 
 async def add_custom_habit(name: str) -> dict:
-    now = datetime.utcnow().isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     db = await get_db()
     try:
         cursor = await db.execute(
@@ -991,6 +1070,228 @@ async def get_daily_summary(today: str) -> dict:
         await db.close()
 
 
+async def get_focus_month(today_str: str) -> list[dict]:
+    """Get daily focus minutes for last 30 days."""
+    today = date.fromisoformat(today_str)
+    start = (today - timedelta(days=29)).isoformat()
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            """SELECT date, COALESCE(SUM(duration_minutes), 0) as minutes
+               FROM pomodoro_sessions
+               WHERE date >= ? AND date <= ?
+               GROUP BY date
+               ORDER BY date ASC""",
+            (start, today_str),
+        )
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        await db.close()
+
+
+async def get_streak(today_str: str) -> int:
+    """Count consecutive days with all core tasks done."""
+    db = await get_db()
+    try:
+        streak = 0
+        current = date.fromisoformat(today_str)
+        while True:
+            d = current.isoformat()
+            # MIT completed
+            mit = await db.execute("SELECT completed FROM daily_mit WHERE date = ?", (d,))
+            mit_row = await mit.fetchone()
+            if not mit_row or not mit_row["completed"]:
+                break
+            # Focus >= 240 min
+            pom = await db.execute(
+                "SELECT COALESCE(SUM(duration_minutes), 0) as total FROM pomodoro_sessions WHERE date = ?", (d,)
+            )
+            pom_row = await pom.fetchone()
+            if pom_row["total"] < 240:
+                break
+            # Journal written
+            j = await db.execute("SELECT content FROM journal_entries WHERE date = ?", (d,))
+            j_row = await j.fetchone()
+            if not j_row or not j_row["content"].strip():
+                break
+            streak += 1
+            current -= timedelta(days=1)
+        return streak
+    finally:
+        await db.close()
+
+
+async def get_daily_score(today_str: str) -> dict:
+    """Compute daily score 0-100."""
+    db = await get_db()
+    try:
+        score = 0
+        breakdown = {}
+
+        # MIT: 25 pts
+        mit = await db.execute("SELECT completed FROM daily_mit WHERE date = ?", (today_str,))
+        mit_row = await mit.fetchone()
+        mit_pts = 25 if (mit_row and mit_row["completed"]) else 0
+        breakdown["mit"] = mit_pts
+        score += mit_pts
+
+        # Focus: 25 pts (proportional to 240 min)
+        pom = await db.execute(
+            "SELECT COALESCE(SUM(duration_minutes), 0) as total FROM pomodoro_sessions WHERE date = ?",
+            (today_str,),
+        )
+        pom_row = await pom.fetchone()
+        focus_mins = pom_row["total"]
+        focus_pts = min(25, round(focus_mins / 240 * 25))
+        breakdown["focus"] = focus_pts
+        score += focus_pts
+
+        # Habits: 25 pts (proportional) — count ALL habits including auto-tracked
+        done_habits = 0
+        total_habits = 5  # focus, workout, night_routine, sleep_tracked, mood_logged
+
+        # Auto: focus achieved (>= 240 min)
+        if focus_mins >= 240:
+            done_habits += 1
+        # Auto: workout
+        wo = await db.execute("SELECT completed FROM workout_log WHERE date = ?", (today_str,))
+        wo_row = await wo.fetchone()
+        if wo_row and wo_row["completed"]:
+            done_habits += 1
+        # Manual: night_routine (in habit_completions)
+        nr = await db.execute("SELECT 1 FROM habit_completions WHERE date = ? AND habit = 'night_routine'", (today_str,))
+        if await nr.fetchone():
+            done_habits += 1
+        # Auto: sleep tracked
+        sl = await db.execute("SELECT 1 FROM sleep_log WHERE date = ?", (today_str,))
+        if await sl.fetchone():
+            done_habits += 1
+        # Auto: mood logged
+        mood_check = await db.execute("SELECT 1 FROM mood_log WHERE date = ?", (today_str,))
+        if await mood_check.fetchone():
+            done_habits += 1
+        # Custom habits
+        custom_cursor = await db.execute("SELECT COUNT(*) as c FROM custom_habits")
+        custom_row = await custom_cursor.fetchone()
+        total_habits += custom_row["c"]
+        custom_done = await db.execute(
+            "SELECT COUNT(*) as c FROM habit_completions WHERE date = ? AND habit != 'night_routine'", (today_str,)
+        )
+        custom_done_row = await custom_done.fetchone()
+        done_habits += custom_done_row["c"]
+
+        habit_pts = min(25, round(done_habits / max(total_habits, 1) * 25))
+        breakdown["habits"] = habit_pts
+        score += habit_pts
+
+        # Journal: 15 pts
+        j = await db.execute("SELECT content FROM journal_entries WHERE date = ?", (today_str,))
+        j_row = await j.fetchone()
+        journal_pts = 15 if (j_row and j_row["content"].strip()) else 0
+        breakdown["journal"] = journal_pts
+        score += journal_pts
+
+        # Mood: 10 pts
+        m = await db.execute("SELECT mood FROM mood_log WHERE date = ?", (today_str,))
+        m_row = await m.fetchone()
+        mood_pts = 10 if m_row else 0
+        breakdown["mood"] = mood_pts
+        score += mood_pts
+
+        return {"score": score, "breakdown": breakdown}
+    finally:
+        await db.close()
+
+
+SEED_FEEDS = [
+    ("Stratechery", "https://stratechery.com/feed/", "https://stratechery.com"),
+    ("Simon Willison", "https://simonwillison.net/atom/everything/", "https://simonwillison.net"),
+    ("Daring Fireball", "https://daringfireball.net/feeds/main", "https://daringfireball.net"),
+    ("Seth Godin", "https://feeds.feedblitz.com/sethsblog", "https://seths.blog"),
+    ("The Hustle", "https://thehustle.co/feed/", "https://thehustle.co"),
+    ("Paul Graham", "http://www.aaronsw.com/2002/feeds/pgessays.rss", "https://paulgraham.com"),
+    ("Cal Newport", "https://calnewport.com/feed/", "https://calnewport.com"),
+]
+
+
+async def seed_rss_feeds():
+    db = await get_db()
+    try:
+        for name, feed_url, site_url in SEED_FEEDS:
+            await db.execute(
+                "INSERT OR IGNORE INTO rss_feeds (name, feed_url, site_url) VALUES (?, ?, ?)",
+                (name, feed_url, site_url),
+            )
+        await db.commit()
+    finally:
+        await db.close()
+
+
+async def get_rss_feeds() -> list[dict]:
+    db = await get_db()
+    try:
+        cursor = await db.execute("SELECT * FROM rss_feeds ORDER BY name")
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        await db.close()
+
+
+async def get_rss_items(limit: int = 50) -> list[dict]:
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            """SELECT ri.*, rf.name as feed_name, rf.site_url
+               FROM rss_items ri
+               JOIN rss_feeds rf ON ri.feed_id = rf.id
+               ORDER BY ri.published_at DESC, ri.fetched_at DESC
+               LIMIT ?""",
+            (limit,),
+        )
+        rows = await cursor.fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        await db.close()
+
+
+async def save_rss_items(feed_id: int, items: list[dict]):
+    now = datetime.now(timezone.utc).isoformat()
+    db = await get_db()
+    try:
+        for item in items:
+            await db.execute(
+                """INSERT OR IGNORE INTO rss_items
+                   (feed_id, title, url, author, published_at, fetched_at, guid)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    feed_id,
+                    item["title"],
+                    item["url"],
+                    item.get("author", ""),
+                    item.get("published_at", ""),
+                    now,
+                    item.get("guid", item["url"]),
+                ),
+            )
+        await db.commit()
+    finally:
+        await db.close()
+
+
+async def update_feed_fetched(feed_id: int):
+    now = datetime.now(timezone.utc).isoformat()
+    db = await get_db()
+    try:
+        await db.execute(
+            "UPDATE rss_feeds SET last_fetched_at = ? WHERE id = ?",
+            (now, feed_id),
+        )
+        await db.commit()
+    finally:
+        await db.close()
+
+
 async def get_weekly_review(today: str) -> dict:
     today_date = date.fromisoformat(today)
     dates = [(today_date - timedelta(days=i)).isoformat() for i in range(6, -1, -1)]
@@ -1111,5 +1412,200 @@ async def get_weekly_review(today: str) -> dict:
             "avg_sleep_hours": avg_sleep,
             "focus_per_day": focus_per_day,
         }
+    finally:
+        await db.close()
+
+
+# --- Water ---
+
+
+async def get_water_today(today_str: str) -> int:
+    db = await get_db()
+    try:
+        cursor = await db.execute("SELECT glasses FROM water_log WHERE date = ?", (today_str,))
+        row = await cursor.fetchone()
+        return row["glasses"] if row else 0
+    finally:
+        await db.close()
+
+
+async def increment_water(today_str: str) -> int:
+    db = await get_db()
+    try:
+        await db.execute(
+            "INSERT INTO water_log (date, glasses) VALUES (?, 1) ON CONFLICT(date) DO UPDATE SET glasses = glasses + 1",
+            (today_str,),
+        )
+        await db.commit()
+        cursor = await db.execute("SELECT glasses FROM water_log WHERE date = ?", (today_str,))
+        row = await cursor.fetchone()
+        return row["glasses"]
+    finally:
+        await db.close()
+
+
+async def decrement_water(today_str: str) -> int:
+    db = await get_db()
+    try:
+        await db.execute(
+            "UPDATE water_log SET glasses = MAX(0, glasses - 1) WHERE date = ?",
+            (today_str,),
+        )
+        await db.commit()
+        cursor = await db.execute("SELECT glasses FROM water_log WHERE date = ?", (today_str,))
+        row = await cursor.fetchone()
+        return row["glasses"] if row else 0
+    finally:
+        await db.close()
+
+
+# --- Gratitude ---
+
+
+async def get_gratitudes() -> list[dict]:
+    db = await get_db()
+    try:
+        cursor = await db.execute("SELECT * FROM gratitude_jar ORDER BY created_at DESC")
+        return [dict(row) for row in await cursor.fetchall()]
+    finally:
+        await db.close()
+
+
+async def save_gratitude(text: str) -> dict:
+    now = datetime.now(timezone.utc).isoformat()
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            "INSERT INTO gratitude_jar (text, created_at) VALUES (?, ?)", (text, now)
+        )
+        await db.commit()
+        cur = await db.execute("SELECT * FROM gratitude_jar WHERE id = ?", (cursor.lastrowid,))
+        return dict(await cur.fetchone())
+    finally:
+        await db.close()
+
+
+async def get_random_gratitude() -> dict | None:
+    db = await get_db()
+    try:
+        cursor = await db.execute("SELECT * FROM gratitude_jar ORDER BY RANDOM() LIMIT 1")
+        row = await cursor.fetchone()
+        return dict(row) if row else None
+    finally:
+        await db.close()
+
+
+# --- Search ---
+
+
+async def search_all(query: str, limit: int = 20) -> dict:
+    db = await get_db()
+    q = f"%{query}%"
+    try:
+        results = {"journal": [], "captures": [], "queue": [], "rss": []}
+        # Journal
+        cur = await db.execute(
+            "SELECT date, content FROM journal_entries WHERE content LIKE ? ORDER BY date DESC LIMIT ?",
+            (q, limit),
+        )
+        results["journal"] = [dict(r) for r in await cur.fetchall()]
+        # Captures
+        cur = await db.execute(
+            "SELECT id, text, created_at FROM quick_capture WHERE text LIKE ? AND archived_at IS NULL ORDER BY created_at DESC LIMIT ?",
+            (q, limit),
+        )
+        results["captures"] = [dict(r) for r in await cur.fetchall()]
+        # Reading queue
+        cur = await db.execute(
+            "SELECT id, title, url, domain FROM reading_queue WHERE title LIKE ? ORDER BY saved_at DESC LIMIT ?",
+            (q, limit),
+        )
+        results["queue"] = [dict(r) for r in await cur.fetchall()]
+        # RSS items
+        cur = await db.execute(
+            "SELECT ri.id, ri.title, ri.url, rf.name as feed_name FROM rss_items ri JOIN rss_feeds rf ON ri.feed_id = rf.id WHERE ri.title LIKE ? ORDER BY ri.published_at DESC LIMIT ?",
+            (q, limit),
+        )
+        results["rss"] = [dict(r) for r in await cur.fetchall()]
+        return results
+    finally:
+        await db.close()
+
+
+# --- Achievements ---
+
+
+async def get_achievements() -> list[dict]:
+    db = await get_db()
+    try:
+        cursor = await db.execute("SELECT * FROM achievements ORDER BY earned_at DESC")
+        return [dict(row) for row in await cursor.fetchall()]
+    finally:
+        await db.close()
+
+
+async def award_achievement(name: str, description: str) -> bool:
+    """Award achievement if not already earned. Returns True if newly awarded."""
+    db = await get_db()
+    try:
+        existing = await db.execute("SELECT id FROM achievements WHERE name = ?", (name,))
+        if await existing.fetchone():
+            return False
+        now = datetime.now(timezone.utc).isoformat()
+        await db.execute(
+            "INSERT INTO achievements (name, description, earned_at) VALUES (?, ?, ?)",
+            (name, description, now),
+        )
+        await db.commit()
+        return True
+    finally:
+        await db.close()
+
+
+async def check_achievements(today_str: str) -> list[dict]:
+    """Check and award any new achievements. Returns newly awarded ones."""
+    db = await get_db()
+    newly_awarded = []
+    try:
+        # Total pomodoros
+        cur = await db.execute("SELECT COUNT(*) as c FROM pomodoro_sessions")
+        total_pomos = (await cur.fetchone())["c"]
+        if total_pomos >= 1:
+            if await award_achievement("first_pomodoro", "Completed your first focus session"):
+                newly_awarded.append({"name": "first_pomodoro", "description": "Completed your first focus session"})
+        if total_pomos >= 10:
+            if await award_achievement("10_pomodoros", "Completed 10 focus sessions"):
+                newly_awarded.append({"name": "10_pomodoros", "description": "Completed 10 focus sessions"})
+        if total_pomos >= 100:
+            if await award_achievement("100_pomodoros", "Completed 100 focus sessions"):
+                newly_awarded.append({"name": "100_pomodoros", "description": "Completed 100 focus sessions"})
+
+        # Journal entries
+        cur = await db.execute("SELECT COUNT(*) as c FROM journal_entries WHERE content != ''")
+        total_journal = (await cur.fetchone())["c"]
+        if total_journal >= 1:
+            if await award_achievement("first_journal", "Wrote your first journal entry"):
+                newly_awarded.append({"name": "first_journal", "description": "Wrote your first journal entry"})
+        if total_journal >= 30:
+            if await award_achievement("30_journals", "Wrote 30 journal entries"):
+                newly_awarded.append({"name": "30_journals", "description": "Wrote 30 journal entries"})
+
+        # Reading queue
+        cur = await db.execute("SELECT COUNT(*) as c FROM reading_queue")
+        total_saved = (await cur.fetchone())["c"]
+        if total_saved >= 50:
+            if await award_achievement("50_saved", "Saved 50 articles to reading queue"):
+                newly_awarded.append({"name": "50_saved", "description": "Saved 50 articles to reading queue"})
+
+        # Inbox zero
+        cur = await db.execute("SELECT COUNT(*) as c FROM reading_queue WHERE read_at IS NULL")
+        unread = (await cur.fetchone())["c"]
+        cur2 = await db.execute("SELECT COUNT(*) as c FROM quick_capture WHERE archived_at IS NULL")
+        uncaptured = (await cur2.fetchone())["c"]
+        if total_saved > 0 and unread == 0 and uncaptured == 0:
+            if await award_achievement("inbox_zero", "Achieved inbox zero"):
+                newly_awarded.append({"name": "inbox_zero", "description": "Achieved inbox zero"})
+
+        return newly_awarded
     finally:
         await db.close()
