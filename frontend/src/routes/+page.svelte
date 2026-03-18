@@ -207,7 +207,7 @@
 						<circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--border)" stroke-width="3" />
 						<circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--accent)" stroke-width="3"
 							stroke-dasharray="{dailyScore.score * 0.9749} {97.49 - dailyScore.score * 0.9749}"
-							stroke-dashoffset="24.4" stroke-linecap="round" />
+							stroke-dashoffset="0" stroke-linecap="round" />
 					</svg>
 					<span class="score-ring-text">{dailyScore.score}</span>
 				</div>
