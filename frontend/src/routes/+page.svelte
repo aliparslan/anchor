@@ -331,6 +331,6 @@
 
 	<JournalCard />
 
-	<ShutdownModal open={showShutdown} onclose={() => showShutdown = false} />
+	<ShutdownModal open={showShutdown} onclose={() => { showShutdown = false; fetchDailyScore().then(s => dailyScore = s); }} />
 	<Confetti trigger={showConfetti} />
 </div>

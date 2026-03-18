@@ -35,7 +35,7 @@
   <div class="shutdown-overlay" onclick={onclose}>
     <!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
     <div class="shutdown-modal" onclick={(e) => e.stopPropagation()}>
-      <h2 class="shutdown-title">End of Day</h2>
+      <h2 class="shutdown-title">Today</h2>
 
       {#if summary}
         <div class="shutdown-sections">
