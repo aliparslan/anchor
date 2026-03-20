@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { completePomodoroSession } from '$lib/api';
 	import { Play, Pause, ArrowCounterClockwise } from 'phosphor-svelte';
+	import { tap, success } from '$lib/haptics';
 
 	async function requestNotificationPermission() {
 		if ('Notification' in window && Notification.permission === 'default') {
@@ -75,6 +76,7 @@
 	}
 
 	function handleStartPause() {
+		tap();
 		requestNotificationPermission();
 		if (state.status === 'idle') {
 			state = startTimer(state);

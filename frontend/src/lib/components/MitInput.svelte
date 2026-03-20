@@ -2,27 +2,35 @@
   import { fetchMitToday, saveMit, toggleMit, type Mit } from '$lib/api';
   import { onDestroy } from 'svelte';
   import { Check } from 'phosphor-svelte';
+  import { tap } from '$lib/haptics';
 
   let mit = $state<Mit | null>(null);
   let text = $state('');
   let completed = $state(false);
   let saveTimeout: ReturnType<typeof setTimeout> | null = null;
+  let savedIndicator = $state(false);
+  let indicatorTimeout: ReturnType<typeof setTimeout> | null = null;
 
   async function handleInput() {
     if (saveTimeout) clearTimeout(saveTimeout);
     saveTimeout = setTimeout(async () => {
       const saved = await saveMit(text);
       mit = saved;
+      savedIndicator = true;
+      if (indicatorTimeout) clearTimeout(indicatorTimeout);
+      indicatorTimeout = setTimeout(() => { savedIndicator = false; }, 2000);
     }, 1500);
   }
 
   async function handleToggle() {
     if (!text.trim()) return;
+    tap();
     completed = await toggleMit();
   }
 
   onDestroy(() => {
     if (saveTimeout) clearTimeout(saveTimeout);
+    if (indicatorTimeout) clearTimeout(indicatorTimeout);
   });
 
   $effect(() => {
@@ -48,6 +56,9 @@
     bind:value={text}
     oninput={handleInput}
   />
+  {#if savedIndicator}
+    <span class="mit-saved">Saved</span>
+  {/if}
 </div>
 
 <style>
@@ -100,6 +111,13 @@
 
   .mit-input::placeholder {
     color: var(--text-tertiary);
+  }
+
+  .mit-saved {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+    flex-shrink: 0;
   }
 
   .mit-done {

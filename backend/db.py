@@ -1459,6 +1459,18 @@ async def decrement_water(today_str: str) -> int:
         await db.close()
 
 
+async def get_water_week() -> list[dict]:
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            "SELECT date, glasses FROM water_log WHERE date >= date('now', '-6 days') ORDER BY date"
+        )
+        rows = await cursor.fetchall()
+        return [{"date": r["date"], "glasses": r["glasses"]} for r in rows]
+    finally:
+        await db.close()
+
+
 # --- Gratitude ---
 
 

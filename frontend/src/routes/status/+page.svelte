@@ -7,10 +7,11 @@
 	import { getCached, setCached } from '$lib/cache';
 	import { theme, toggleTheme } from '$lib/theme';
 	import { Desktop, Robot, Globe, Moon, Sun, Circle } from 'phosphor-svelte';
-	import { fetchDailyScore, type DailyScore } from '$lib/api';
+	import { getScore, onScoreChange } from '$lib/score';
+	import type { DailyScore } from '$lib/api';
 
-	let dailyScore = $state<DailyScore | null>(null);
-	$effect(() => { fetchDailyScore().then(s => dailyScore = s).catch(() => {}); });
+	let dailyScore = $state<DailyScore | null>(getScore());
+	$effect(() => { return onScoreChange((s) => dailyScore = s); });
 	import { onDestroy } from 'svelte';
 
 	const _c = getCached<any>('status');

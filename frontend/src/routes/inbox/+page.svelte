@@ -9,10 +9,11 @@
 	import { getCached, setCached, clearCached } from '$lib/cache';
 	import { onDestroy } from 'svelte';
 	import { Check, X, Moon, Sun, Eye, EyeSlash } from 'phosphor-svelte';
-	import { fetchDailyScore, type DailyScore } from '$lib/api';
+	import { getScore, onScoreChange } from '$lib/score';
+	import type { DailyScore } from '$lib/api';
 
-	let dailyScore = $state<DailyScore | null>(null);
-	$effect(() => { fetchDailyScore().then(s => dailyScore = s).catch(() => {}); });
+	let dailyScore = $state<DailyScore | null>(getScore());
+	$effect(() => { return onScoreChange((s) => dailyScore = s); });
 
 	const _c = getCached<any>('inbox');
 
@@ -65,11 +66,15 @@
 	}
 
 	$effect(() => {
-		if (_c) return;
+		if (_c) {
+			// Always refresh captures even with cache (quick notes may have been added)
+			fetchCaptures().then((c) => captures = c).catch(() => {});
+			return;
+		}
 		Promise.all([fetchReadingQueue(), fetchCaptures()]).then(([q, c]) => {
 			queue = q;
 			captures = c;
-		});
+		}).catch((err) => console.warn('[Inbox] fetch error:', err));
 	});
 
 	onDestroy(() => {

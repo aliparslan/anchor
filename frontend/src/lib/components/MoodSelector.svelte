@@ -1,5 +1,6 @@
 <script lang="ts">
   import { SmileyXEyes, SmileySad, SmileyMeh, Smiley, SmileyWink } from 'phosphor-svelte';
+  import { tap } from '$lib/haptics';
 
   let { mood = null, onselect }: { mood: number | null; onselect: (n: number) => void } = $props();
 
@@ -16,7 +17,7 @@
         class="mood-circle"
         class:mood-selected={mood === n}
         style="--mood-color: {moodColors[i]}"
-        onclick={() => onselect(n)}
+        onclick={() => { tap(); onselect(n); }}
         aria-label="Mood {n}"
       >
         <Face size={28} weight="duotone" />

@@ -3,9 +3,10 @@
 		fetchPomodoroToday,
 		fetchWeather, setWeatherZip,
 		fetchVapidPublicKey, registerPushSubscription,
-		fetchDailyStreak, fetchDailyScore,
+		fetchDailyStreak,
 		type WeatherData, type DailyScore
 	} from '$lib/api';
+	import { getScore, refreshScore, onScoreChange } from '$lib/score';
 	import { theme, toggleTheme } from '$lib/theme';
 	import { getCached, setCached } from '$lib/cache';
 	import { onDestroy } from 'svelte';
@@ -28,7 +29,8 @@
 	let showShutdown = $state(false);
 	let showConfetti = $state(false);
 	let streak = $state(_c?.streak ?? 0);
-	let dailyScore = $state<DailyScore | null>(_c?.dailyScore ?? null);
+	let dailyScore = $state<DailyScore | null>(_c?.dailyScore ?? getScore());
+	$effect(() => { return onScoreChange((s) => dailyScore = s); });
 	let factDismissed = $state(
 		typeof window !== 'undefined' && localStorage.getItem('fact_dismissed_date') === new Date().toISOString().split('T')[0]
 	);
@@ -159,10 +161,9 @@
 		Promise.all([
 			fetchPomodoroToday(),
 			fetchWeather(),
-			fetchDailyStreak(),
-			fetchDailyScore()
+			fetchDailyStreak()
 		])
-			.then(([pomodoro, weatherData, streakVal, scoreVal]) => {
+			.then(([pomodoro, weatherData, streakVal]) => {
 				pomodoroMinutes = pomodoro.total_minutes;
 				if (weatherData.weather) {
 					weather = weatherData.weather;
@@ -171,8 +172,8 @@
 				weatherZip = weatherData.zip_code;
 				if (!weatherData.zip_code) showZipInput = true;
 				streak = streakVal;
-				dailyScore = scoreVal;
 			})
+			.catch((err) => console.warn('[Home] fetch error:', err))
 			.finally(() => {
 				loading = false;
 			});
@@ -312,7 +313,7 @@
 
 	{#if !factDismissed}
 		<div class="fact-card">
-			<Lightbulb size={14} weight="duotone" class="fact-icon" />
+			<Lightbulb size={20} weight="duotone" class="fact-icon" />
 			<span class="fact-text">{dailyFact}</span>
 			<button class="fact-dismiss" onclick={() => {
 				factDismissed = true;
@@ -340,6 +341,6 @@
 	</div>
 	<JournalCard />
 
-	<ShutdownModal open={showShutdown} onclose={() => { showShutdown = false; fetchDailyScore().then(s => dailyScore = s); }} />
+	<ShutdownModal open={showShutdown} onclose={() => { showShutdown = false; refreshScore(); }} />
 	<Confetti trigger={showConfetti} />
 </div>

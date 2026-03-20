@@ -3,9 +3,9 @@
 		fetchHabitsToday, toggleHabit, toggleWorkout, saveWorkoutNote,
 		fetchMoodToday, saveMood, fetchStreaks, fetchHabitsWeek,
 		fetchCustomHabits, addCustomHabit, deleteCustomHabit,
-		fetchWaterToday, incrementWater, decrementWater,
+		fetchWaterToday, incrementWater, decrementWater, fetchWaterWeek,
 		fetchAchievements,
-		type HabitsToday, type HabitsWeek, type CustomHabit, type Achievement
+		type HabitsToday, type HabitsWeek, type CustomHabit, type Achievement, type WaterDay
 	} from '$lib/api';
 	import MoodSelector from '$lib/components/MoodSelector.svelte';
 	import SleepLogger from '$lib/components/SleepLogger.svelte';
@@ -15,11 +15,13 @@
 	import { theme, toggleTheme } from '$lib/theme';
 	import { getCached, setCached, clearCached } from '$lib/cache';
 	import { onDestroy } from 'svelte';
-	import { Check, X, Plus, Minus, Drop, Trophy, Moon, Sun } from 'phosphor-svelte';
-	import { fetchDailyScore, type DailyScore } from '$lib/api';
+	import { Check, X, Plus, Minus, Drop, PintGlass, Trophy, Moon, Sun } from 'phosphor-svelte';
+	import { tap, success } from '$lib/haptics';
+	import { getScore, onScoreChange } from '$lib/score';
+	import type { DailyScore } from '$lib/api';
 
-	let dailyScore = $state<DailyScore | null>(null);
-	$effect(() => { fetchDailyScore().then(s => dailyScore = s).catch(() => {}); });
+	let dailyScore = $state<DailyScore | null>(getScore());
+	$effect(() => { return onScoreChange((s) => dailyScore = s); });
 
 	const _c = getCached<any>('track');
 
@@ -49,6 +51,7 @@
 
 	async function handleToggleWorkout() {
 		if (!habits) return;
+		tap();
 		const done = await toggleWorkout();
 		habits = { ...habits, workout: done ? 1 : 0 };
 		if (!done) workoutNote = '';
@@ -57,6 +60,7 @@
 
 	async function handleToggleNightRoutine() {
 		if (!habits) return;
+		tap();
 		const done = await toggleHabit('night_routine');
 		habits = { ...habits, night_routine: done };
 		clearCached('home');
@@ -78,6 +82,7 @@
 
 	async function handleToggleCustomHabit(name: string) {
 		if (!habits) return;
+		tap();
 		const done = await toggleHabit(name);
 		habits = {
 			...habits,
@@ -102,11 +107,31 @@
 		weekData = await fetchHabitsWeek();
 	}
 
+	let waterWeek = $state<WaterDay[]>([]);
+	let waterExpanded = $state(false);
+
 	async function handleWaterIncrement() {
+		tap();
 		waterGlasses = await incrementWater();
 	}
 	async function handleWaterDecrement() {
+		tap();
 		waterGlasses = await decrementWater();
+	}
+	async function handleWaterTap(target: number) {
+		tap();
+		while (waterGlasses < target) {
+			waterGlasses = await incrementWater();
+		}
+		while (waterGlasses > target) {
+			waterGlasses = await decrementWater();
+		}
+	}
+	async function toggleWaterInsights() {
+		waterExpanded = !waterExpanded;
+		if (waterExpanded && waterWeek.length === 0) {
+			waterWeek = await fetchWaterWeek();
+		}
 	}
 
 	async function handleDeleteCustomHabit(id: number, name: string) {
@@ -174,29 +199,48 @@
 
 <p class="habits-date">{formatDate()}</p>
 
+<div class="section-header">
+	<span class="section-title">Mood</span>
+</div>
 <MoodSelector {mood} onselect={handleMoodSelect} />
 
+<div class="section-header" style="margin-top: var(--space-widget)">
+	<span class="section-title">Hydration</span>
+</div>
 <div class="water-widget">
 	<div class="water-header">
-		<Drop size={16} weight="duotone" />
-		<span class="water-label">Water</span>
-		<span class="water-count">{waterGlasses} / 8</span>
+		<span class="water-amount">{waterGlasses * 250}<span class="water-unit"> / 2,000ml</span></span>
 	</div>
-	<div class="water-controls">
-		<button class="water-btn" onclick={handleWaterDecrement} disabled={waterGlasses === 0}>
-			<Minus size={14} weight="bold" />
-		</button>
-		<div class="water-bar">
-			{#each Array(8) as _, i}
-				<div class="water-segment" class:water-segment-filled={i < waterGlasses}></div>
+	<div class="water-cups">
+		{#each Array(8) as _, i}
+			<button class="water-cup" class:water-cup-filled={i < waterGlasses} onclick={() => handleWaterTap(i < waterGlasses && i === waterGlasses - 1 ? i : i + 1)} aria-label="Glass {i + 1}">
+				<PintGlass size={28} weight={i < waterGlasses ? "fill" : "duotone"} />
+			</button>
+		{/each}
+	</div>
+	<button class="water-insights-toggle" onclick={toggleWaterInsights}>
+		{waterExpanded ? 'Hide' : 'View Hydration'}
+	</button>
+	{#if waterExpanded}
+		<div class="water-chart">
+			{#each waterWeek as day}
+				<div class="water-chart-col">
+					<div class="water-chart-bar-wrap">
+						<div class="water-chart-bar" style="height: {Math.min(100, (day.glasses / 8) * 100)}%"></div>
+					</div>
+					<span class="water-chart-label">{new Date(day.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 3)}</span>
+				</div>
 			{/each}
+			{#if waterWeek.length === 0}
+				<span class="water-chart-empty">No data yet</span>
+			{/if}
 		</div>
-		<button class="water-btn" onclick={handleWaterIncrement}>
-			<Plus size={14} weight="bold" />
-		</button>
-	</div>
+	{/if}
 </div>
 
+<div class="section-header" style="margin-top: var(--space-widget)">
+	<span class="section-title">Habits</span>
+</div>
 {#if habits}
 	<div class="habits-list">
 		<!-- Focus — auto -->
@@ -350,6 +394,9 @@
 
 <div class="track-spacer"></div>
 
+<div class="section-header">
+	<span class="section-title">Sleep</span>
+</div>
 <SleepLogger />
 
 <div class="section-header track-section-header">
@@ -535,90 +582,129 @@
 
 	.water-widget {
 		border-radius: 10px;
-		padding: 14px 16px;
+		padding: 16px;
 		background: var(--card-bg);
 		border: 1px solid var(--border);
 		margin-bottom: 20px;
 	}
 
 	.water-header {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		margin-bottom: 10px;
-		color: var(--text-secondary);
+		margin-bottom: 12px;
 	}
 
-	.water-label {
+	.water-amount {
 		font-family: var(--font-display);
-		font-size: 13px;
+		font-size: 24px;
 		font-weight: 600;
 		color: var(--text);
 	}
 
-	.water-count {
-		font-family: var(--font-mono);
-		font-size: 12px;
+	.water-unit {
+		font-family: var(--font-sans);
+		font-size: 14px;
+		font-weight: 400;
 		color: var(--text-tertiary);
-		margin-left: auto;
 	}
 
-	.water-controls {
+	.water-cups {
 		display: flex;
-		align-items: center;
-		gap: 10px;
+		justify-content: space-between;
+		gap: 2px;
+		margin-bottom: 12px;
 	}
 
-	.water-btn {
-		width: 36px;
-		height: 36px;
-		border-radius: 50%;
-		border: 1px solid var(--border);
-		background: none;
-		color: var(--text-secondary);
-		cursor: pointer;
+	.water-cup {
+		flex: 1;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		padding: 6px 0;
+		border: none;
+		background: none;
+		color: var(--border);
+		cursor: pointer;
 		transition: all 0.15s ease;
-		padding: 0;
+		border-radius: 6px;
 	}
 
-	.water-btn:hover {
+	.water-cup:hover {
 		background: var(--bg-hover);
-		color: var(--text);
-		border-color: var(--text-tertiary);
 	}
 
-	.water-btn:disabled {
-		opacity: 0.3;
-		cursor: not-allowed;
+	.water-cup:active {
+		transform: scale(0.9);
 	}
 
-	.water-bar {
+	.water-cup-filled {
+		color: #3b82f6;
+	}
+
+	.water-insights-toggle {
+		display: block;
+		width: 100%;
+		padding: 8px;
+		border: none;
+		border-top: 1px solid var(--border);
+		background: none;
+		color: #3b82f6;
+		font-family: var(--font-sans);
+		font-size: 13px;
+		font-weight: 500;
+		cursor: pointer;
+		transition: opacity 0.15s ease;
+	}
+
+	.water-insights-toggle:hover {
+		opacity: 0.7;
+	}
+
+	.water-chart {
+		display: flex;
+		justify-content: space-around;
+		align-items: flex-end;
+		gap: 6px;
+		padding: 16px 0 4px;
+		height: 120px;
+	}
+
+	.water-chart-col {
 		flex: 1;
 		display: flex;
-		gap: 3px;
-		height: 12px;
+		flex-direction: column;
+		align-items: center;
+		gap: 6px;
+		height: 100%;
 	}
 
-	.water-segment {
+	.water-chart-bar-wrap {
 		flex: 1;
-		border-radius: 3px;
-		background: var(--bg-inset);
-		transition: background 0.2s ease;
+		width: 100%;
+		display: flex;
+		align-items: flex-end;
+		justify-content: center;
 	}
 
-	.water-segment:first-child {
-		border-radius: 6px 3px 3px 6px;
+	.water-chart-bar {
+		width: 70%;
+		max-width: 24px;
+		background: #3b82f6;
+		border-radius: 4px 4px 2px 2px;
+		min-height: 4px;
+		transition: height 0.3s ease;
 	}
 
-	.water-segment:last-child {
-		border-radius: 3px 6px 6px 3px;
+	.water-chart-label {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		color: var(--text-tertiary);
 	}
 
-	.water-segment-filled {
-		background: var(--accent);
+	.water-chart-empty {
+		font-size: 13px;
+		color: var(--text-tertiary);
+		text-align: center;
+		width: 100%;
+		padding: 24px 0;
 	}
 
 	.track-section-header {

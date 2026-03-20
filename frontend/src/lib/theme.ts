@@ -15,6 +15,14 @@ export function initTheme() {
 		window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 	themeStore.set(value);
 	document.documentElement.setAttribute('data-theme', value);
+
+	// Listen for system theme changes (only if user hasn't set a preference)
+	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+		if (localStorage.getItem('theme')) return; // user has explicit preference
+		const next: Theme = e.matches ? 'dark' : 'light';
+		themeStore.set(next);
+		document.documentElement.setAttribute('data-theme', next);
+	});
 }
 
 export function toggleTheme() {

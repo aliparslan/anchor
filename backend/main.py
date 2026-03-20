@@ -74,6 +74,7 @@ from db import (
     get_water_today,
     increment_water,
     decrement_water,
+    get_water_week,
     get_gratitudes,
     save_gratitude,
     get_random_gratitude,
@@ -769,6 +770,11 @@ async def api_water_decrement():
     today = date.today().isoformat()
     glasses = await decrement_water(today)
     return {"glasses": glasses}
+
+@app.get("/api/water/week")
+async def api_water_week():
+    data = await get_water_week()
+    return data
 
 
 # --- Gratitude ---

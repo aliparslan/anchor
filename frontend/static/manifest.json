@@ -2,7 +2,9 @@
 	"name": "Anchor",
 	"short_name": "Anchor",
 	"start_url": "/",
+	"scope": "/",
 	"display": "standalone",
+	"orientation": "portrait",
 	"background_color": "#f5f4f1",
 	"theme_color": "#131211",
 	"icons": [
@@ -30,5 +32,18 @@
 			"type": "image/png",
 			"purpose": "maskable"
 		}
-	]
+	],
+	"shortcuts": [
+		{
+			"name": "Track",
+			"url": "/track/",
+			"icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+		},
+		{
+			"name": "Feed",
+			"url": "/feed/",
+			"icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+		}
+	],
+	"categories": ["productivity", "lifestyle"]
 }

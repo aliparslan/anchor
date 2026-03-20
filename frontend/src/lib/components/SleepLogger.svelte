@@ -182,17 +182,21 @@
 
   .sleep-time-input {
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px 10px;
-    background: var(--bg);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: var(--card-bg);
     color: var(--text);
-    font-family: var(--font-sans);
+    font-family: var(--font-mono);
     font-size: 14px;
     outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    transition: border-color 0.15s ease;
   }
 
   .sleep-time-input:focus {
-    border-color: var(--accent);
+    border-color: var(--text-tertiary);
   }
 
   :global([data-theme='dark']) .sleep-time-input {

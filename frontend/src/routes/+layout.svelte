@@ -10,13 +10,6 @@
 
 	let pageReady = $state(true);
 
-	afterNavigate(() => {
-		pageReady = false;
-		requestAnimationFrame(() => {
-			requestAnimationFrame(() => { pageReady = true; });
-		});
-	});
-
 	let showSearch = $state(false);
 
 	function handleGlobalKeydown(e: KeyboardEvent) {

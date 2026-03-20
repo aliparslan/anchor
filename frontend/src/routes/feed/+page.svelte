@@ -14,10 +14,11 @@
 	import { onDestroy } from 'svelte';
 	import VideoPlayer from '$lib/components/VideoPlayer.svelte';
 	import { Moon, Sun, ArrowClockwise, BookmarkSimple, X, Check } from 'phosphor-svelte';
-	import { fetchDailyScore, type DailyScore } from '$lib/api';
+	import { getScore, onScoreChange } from '$lib/score';
+	import type { DailyScore } from '$lib/api';
 
-	let dailyScore = $state<DailyScore | null>(null);
-	$effect(() => { fetchDailyScore().then(s => dailyScore = s).catch(() => {}); });
+	let dailyScore = $state<DailyScore | null>(getScore());
+	$effect(() => { return onScoreChange((s) => dailyScore = s); });
 
 	// YouTube daily batching: persist reveal count per day in localStorage
 	function getYtRevealCount(): number {
@@ -173,6 +174,7 @@
 						.map((q: any) => q.hn_id as number)
 				);
 			})
+			.catch((err) => console.warn('[Feed] fetch error:', err))
 			.finally(() => {
 				loading = false;
 			});
@@ -346,7 +348,7 @@
 						>
 							<div class="yt-thumb-container">
 								{#if video.thumbnail}
-									<img class="yt-thumb" src={video.thumbnail} alt={video.title} loading="lazy" />
+									<img class="yt-thumb" src={video.thumbnail} alt={video.title} loading="lazy" width="160" height="90" />
 								{/if}
 								{#if video.duration_label}
 									<span class="yt-duration">{video.duration_label}</span>

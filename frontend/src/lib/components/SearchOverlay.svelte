@@ -8,11 +8,14 @@
 	let searching = $state(false);
 	let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 	let inputEl: HTMLInputElement;
+	let selectedIndex = $state(-1);
 
 	function handleInput() {
 		if (searchTimeout) clearTimeout(searchTimeout);
+		selectedIndex = -1;
 		if (!query.trim()) {
 			results = null;
+			searching = false;
 			return;
 		}
 		searching = true;
@@ -20,6 +23,17 @@
 			results = await searchAll(query.trim());
 			searching = false;
 		}, 300);
+	}
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape') { close(); return; }
+		if (e.key === 'ArrowDown') { e.preventDefault(); selectedIndex = Math.min(selectedIndex + 1, totalResults - 1); return; }
+		if (e.key === 'ArrowUp') { e.preventDefault(); selectedIndex = Math.max(selectedIndex - 1, -1); return; }
+		if (e.key === 'Enter' && selectedIndex >= 0) {
+			e.preventDefault();
+			const el = document.querySelector(`.search-result[data-index="${selectedIndex}"]`) as HTMLElement;
+			el?.click();
+		}
 	}
 
 	function close() {
@@ -53,8 +67,11 @@
 					bind:value={query}
 					bind:this={inputEl}
 					oninput={handleInput}
-					onkeydown={(e) => { if (e.key === 'Escape') close(); }}
+					onkeydown={handleKeydown}
 				/>
+				{#if searching}
+					<span class="search-spinner">...</span>
+				{/if}
 				<button class="search-close" onclick={close}>
 					<X size={16} weight="bold" />
 				</button>
