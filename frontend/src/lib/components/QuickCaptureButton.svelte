@@ -145,7 +145,7 @@
     border-radius: 10px;
     border: none;
     background: var(--accent);
-    color: white;
+    color: var(--bg);
     cursor: pointer;
     display: flex;
     align-items: center;

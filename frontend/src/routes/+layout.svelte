@@ -12,7 +12,9 @@
 
 	afterNavigate(() => {
 		pageReady = false;
-		requestAnimationFrame(() => { pageReady = true; });
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => { pageReady = true; });
+		});
 	});
 
 	let showSearch = $state(false);

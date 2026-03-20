@@ -66,7 +66,6 @@
 
 <div class="journal-card">
 	<div class="journal-header">
-		<span class="section-title">Journal</span>
 		<div class="journal-nav">
 			<button class="journal-nav-btn" onclick={() => navigateDay(-1)} aria-label="Previous day">
 				<CaretLeft size={14} weight="bold" />
@@ -154,6 +153,6 @@
 	.journal-past-active {
 		background: var(--accent);
 		border-color: var(--accent);
-		color: white;
+		color: var(--bg);
 	}
 </style>

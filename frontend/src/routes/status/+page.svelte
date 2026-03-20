@@ -7,6 +7,10 @@
 	import { getCached, setCached } from '$lib/cache';
 	import { theme, toggleTheme } from '$lib/theme';
 	import { Desktop, Robot, Globe, Moon, Sun, Circle } from 'phosphor-svelte';
+	import { fetchDailyScore, type DailyScore } from '$lib/api';
+
+	let dailyScore = $state<DailyScore | null>(null);
+	$effect(() => { fetchDailyScore().then(s => dailyScore = s).catch(() => {}); });
 	import { onDestroy } from 'svelte';
 
 	const _c = getCached<any>('status');
@@ -47,13 +51,26 @@
 
 <div class="page-header">
 	<h1 class="greeting">Status</h1>
-	<button class="theme-toggle" onclick={toggleTheme} aria-label="Toggle theme">
-		{#if $theme === 'light'}
-			<Moon size={18} weight="duotone" />
-		{:else}
-			<Sun size={18} weight="duotone" />
+	<div class="page-header-actions">
+		{#if dailyScore !== null}
+			<div class="score-ring" title="{dailyScore.score}/100">
+				<svg viewBox="0 0 36 36" class="score-ring-svg">
+					<circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--border)" stroke-width="3" />
+					<circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--accent)" stroke-width="3"
+						stroke-dasharray="{dailyScore.score * 0.9749} {97.49 - dailyScore.score * 0.9749}"
+						stroke-dashoffset="0" stroke-linecap="round" />
+				</svg>
+				<span class="score-ring-text">{dailyScore.score}</span>
+			</div>
 		{/if}
-	</button>
+		<button class="theme-toggle" onclick={toggleTheme} aria-label="Toggle theme">
+			{#if $theme === 'light'}
+				<Moon size={18} weight="duotone" />
+			{:else}
+				<Sun size={18} weight="duotone" />
+			{/if}
+		</button>
+	</div>
 </div>
 
 <!-- System -->

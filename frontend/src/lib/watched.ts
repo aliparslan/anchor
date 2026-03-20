@@ -1,5 +1,5 @@
-const WATCHED_KEY = 'base:watched_videos';
-const READ_HN_KEY = 'base:read_hn';
+const WATCHED_KEY = 'anchor:watched_videos';
+const READ_HN_KEY = 'anchor:read_hn';
 
 let watchedCache: Set<string> | null = null;
 let readHnCache: Set<string> | null = null;

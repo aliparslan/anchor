@@ -16,6 +16,10 @@
 	import { getCached, setCached, clearCached } from '$lib/cache';
 	import { onDestroy } from 'svelte';
 	import { Check, X, Plus, Minus, Drop, Trophy, Moon, Sun } from 'phosphor-svelte';
+	import { fetchDailyScore, type DailyScore } from '$lib/api';
+
+	let dailyScore = $state<DailyScore | null>(null);
+	$effect(() => { fetchDailyScore().then(s => dailyScore = s).catch(() => {}); });
 
 	const _c = getCached<any>('track');
 
@@ -146,13 +150,26 @@
 
 <div class="page-header">
 	<h1 class="greeting">Track</h1>
-	<button class="theme-toggle" onclick={toggleTheme} aria-label="Toggle theme">
-		{#if $theme === 'light'}
-			<Moon size={18} weight="duotone" />
-		{:else}
-			<Sun size={18} weight="duotone" />
+	<div class="page-header-actions">
+		{#if dailyScore !== null}
+			<div class="score-ring" title="{dailyScore.score}/100">
+				<svg viewBox="0 0 36 36" class="score-ring-svg">
+					<circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--border)" stroke-width="3" />
+					<circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--accent)" stroke-width="3"
+						stroke-dasharray="{dailyScore.score * 0.9749} {97.49 - dailyScore.score * 0.9749}"
+						stroke-dashoffset="0" stroke-linecap="round" />
+				</svg>
+				<span class="score-ring-text">{dailyScore.score}</span>
+			</div>
 		{/if}
-	</button>
+		<button class="theme-toggle" onclick={toggleTheme} aria-label="Toggle theme">
+			{#if $theme === 'light'}
+				<Moon size={18} weight="duotone" />
+			{:else}
+				<Sun size={18} weight="duotone" />
+			{/if}
+		</button>
+	</div>
 </div>
 
 <p class="habits-date">{formatDate()}</p>
@@ -163,15 +180,15 @@
 	<div class="water-header">
 		<Drop size={16} weight="duotone" />
 		<span class="water-label">Water</span>
-		<span class="water-count">{waterGlasses} glasses</span>
+		<span class="water-count">{waterGlasses} / 8</span>
 	</div>
 	<div class="water-controls">
 		<button class="water-btn" onclick={handleWaterDecrement} disabled={waterGlasses === 0}>
 			<Minus size={14} weight="bold" />
 		</button>
-		<div class="water-dots">
+		<div class="water-bar">
 			{#each Array(8) as _, i}
-				<span class="water-dot" class:water-dot-filled={i < waterGlasses}></span>
+				<div class="water-segment" class:water-segment-filled={i < waterGlasses}></div>
 			{/each}
 		</div>
 		<button class="water-btn" onclick={handleWaterIncrement}>
@@ -477,7 +494,7 @@
 		border: none;
 		border-radius: 6px;
 		background: var(--accent);
-		color: white;
+		color: var(--bg);
 		font-family: var(--font-display);
 		font-size: 12px;
 		font-weight: 600;
@@ -520,6 +537,7 @@
 		border-radius: 10px;
 		padding: 14px 16px;
 		background: var(--card-bg);
+		border: 1px solid var(--border);
 		margin-bottom: 20px;
 	}
 
@@ -552,8 +570,8 @@
 	}
 
 	.water-btn {
-		width: 30px;
-		height: 30px;
+		width: 36px;
+		height: 36px;
 		border-radius: 50%;
 		border: 1px solid var(--border);
 		background: none;
@@ -577,25 +595,30 @@
 		cursor: not-allowed;
 	}
 
-	.water-dots {
+	.water-bar {
 		flex: 1;
 		display: flex;
-		justify-content: center;
-		gap: 6px;
+		gap: 3px;
+		height: 12px;
 	}
 
-	.water-dot {
-		width: 10px;
-		height: 10px;
-		border-radius: 50%;
+	.water-segment {
+		flex: 1;
+		border-radius: 3px;
 		background: var(--bg-inset);
-		border: 1.5px solid var(--border);
-		transition: all 0.2s ease;
+		transition: background 0.2s ease;
 	}
 
-	.water-dot-filled {
-		background: var(--color-blue);
-		border-color: var(--color-blue);
+	.water-segment:first-child {
+		border-radius: 6px 3px 3px 6px;
+	}
+
+	.water-segment:last-child {
+		border-radius: 3px 6px 6px 3px;
+	}
+
+	.water-segment-filled {
+		background: var(--accent);
 	}
 
 	.track-section-header {

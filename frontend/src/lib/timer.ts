@@ -8,7 +8,7 @@ export interface PomodoroState {
 	pomodorosCompleted: number;
 }
 
-const STORAGE_KEY = 'base:pomodoro_state';
+const STORAGE_KEY = 'anchor:pomodoro_state';
 
 const DEFAULT_STATE: PomodoroState = {
 	status: 'idle',

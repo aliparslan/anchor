@@ -155,7 +155,7 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    color: white;
+    color: var(--bg);
     transition: all 0.2s ease;
   }
 
@@ -188,7 +188,7 @@
     border-radius: 8px;
     border: none;
     background: var(--accent);
-    color: white;
+    color: var(--bg);
     font-family: var(--font-display);
     font-size: 14px;
     font-weight: 600;

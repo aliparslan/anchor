@@ -323,12 +323,21 @@
 		</div>
 	{/if}
 
+	<div class="section-header">
+		<span class="section-title">Priority</span>
+	</div>
 	<MitInput />
 
+	<div class="section-header" style="margin-top: var(--space-widget)">
+		<span class="section-title">Focus</span>
+	</div>
 	<div class="home-top">
 		<PomodoroTimer bind:totalMinutesToday={pomodoroMinutes} />
 	</div>
 
+	<div class="section-header">
+		<span class="section-title">Journal</span>
+	</div>
 	<JournalCard />
 
 	<ShutdownModal open={showShutdown} onclose={() => { showShutdown = false; fetchDailyScore().then(s => dailyScore = s); }} />

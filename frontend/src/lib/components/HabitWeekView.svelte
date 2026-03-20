@@ -24,12 +24,24 @@
   const today = new Date().toISOString().split('T')[0];
 
   let expanded = $state(false);
+
+  const todayCompletions = $derived(() => {
+    if (!data) return '';
+    const todayIdx = data.dates.indexOf(today);
+    if (todayIdx === -1) return '';
+    const total = Object.keys(data.habits).length;
+    const done = Object.values(data.habits).filter(days => days[todayIdx]).length;
+    return `${done}/${total} today`;
+  });
 </script>
 
 {#if data}
   <div class="week-view">
     <button class="week-toggle" onclick={() => expanded = !expanded}>
       <span class="week-toggle-label">Week</span>
+      {#if !expanded && todayCompletions()}
+        <span class="week-toggle-preview">{todayCompletions()}</span>
+      {/if}
       <span class="week-toggle-arrow" class:week-toggle-expanded={expanded}>&rsaquo;</span>
     </button>
     {#if expanded}
@@ -79,6 +91,15 @@
     font-family: var(--font-display);
     font-size: 14px;
     font-weight: 600;
+  }
+
+  .week-toggle-preview {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+    margin-left: auto;
+    margin-right: 8px;
   }
 
   .week-toggle-arrow {

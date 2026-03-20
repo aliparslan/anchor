@@ -1,4 +1,4 @@
-const CACHE_NAME = 'base-v2';
+const CACHE_NAME = 'anchor-v1';
 
 self.addEventListener('install', (event) => {
 	self.skipWaiting();
@@ -48,7 +48,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 self.addEventListener('push', (event) => {
-	const data = event.data ? event.data.json() : { title: 'Base', body: 'Timer complete!' };
+	const data = event.data ? event.data.json() : { title: 'Anchor', body: 'Timer complete!' };
 	event.waitUntil(
 		self.registration.showNotification(data.title, {
 			body: data.body,

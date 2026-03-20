@@ -15,12 +15,15 @@
     if (expanded) refresh();
   }
 
-  $effect(() => { if (expanded) refresh(); });
+  $effect(() => { refresh(); });
 </script>
 
 <div class="weekly-review">
   <button class="weekly-toggle" onclick={toggle}>
     <span class="weekly-toggle-label">Weekly Review</span>
+    {#if !expanded && review}
+      <span class="weekly-toggle-preview">{review.focus_hours}h focus · {review.habit_rate.completed}/{review.habit_rate.total} habits</span>
+    {/if}
     <span class="weekly-toggle-arrow" class:weekly-expanded={expanded}>&rsaquo;</span>
   </button>
   {#if expanded && review}
@@ -90,6 +93,15 @@
     font-family: var(--font-display);
     font-size: 14px;
     font-weight: 600;
+  }
+
+  .weekly-toggle-preview {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+    margin-left: auto;
+    margin-right: 8px;
   }
 
   .weekly-toggle-arrow {

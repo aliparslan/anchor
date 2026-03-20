@@ -85,7 +85,7 @@
   .mit-check-done {
     background: var(--accent);
     border-color: var(--accent);
-    color: white;
+    color: var(--bg);
   }
 
   .mit-input {

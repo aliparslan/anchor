@@ -9,6 +9,10 @@
 	import { getCached, setCached, clearCached } from '$lib/cache';
 	import { onDestroy } from 'svelte';
 	import { Check, X, Moon, Sun, Eye, EyeSlash } from 'phosphor-svelte';
+	import { fetchDailyScore, type DailyScore } from '$lib/api';
+
+	let dailyScore = $state<DailyScore | null>(null);
+	$effect(() => { fetchDailyScore().then(s => dailyScore = s).catch(() => {}); });
 
 	const _c = getCached<any>('inbox');
 
@@ -84,13 +88,26 @@
 
 <div class="page-header">
 	<h1 class="greeting">Inbox</h1>
-	<button class="theme-toggle" onclick={toggleTheme} aria-label="Toggle theme">
-		{#if $theme === 'light'}
-			<Moon size={18} weight="duotone" />
-		{:else}
-			<Sun size={18} weight="duotone" />
+	<div class="page-header-actions">
+		{#if dailyScore !== null}
+			<div class="score-ring" title="{dailyScore.score}/100">
+				<svg viewBox="0 0 36 36" class="score-ring-svg">
+					<circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--border)" stroke-width="3" />
+					<circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--accent)" stroke-width="3"
+						stroke-dasharray="{dailyScore.score * 0.9749} {97.49 - dailyScore.score * 0.9749}"
+						stroke-dashoffset="0" stroke-linecap="round" />
+				</svg>
+				<span class="score-ring-text">{dailyScore.score}</span>
+			</div>
 		{/if}
-	</button>
+		<button class="theme-toggle" onclick={toggleTheme} aria-label="Toggle theme">
+			{#if $theme === 'light'}
+				<Moon size={18} weight="duotone" />
+			{:else}
+				<Sun size={18} weight="duotone" />
+			{/if}
+		</button>
+	</div>
 </div>
 
 <!-- Reading Queue -->
@@ -208,15 +225,15 @@
 	}
 
 	.filter-active {
-		background: var(--accent);
-		border-color: var(--accent);
-		color: white;
+		background: var(--text);
+		border-color: var(--text);
+		color: var(--bg);
 	}
 
 	.filter-active:hover {
-		background: var(--accent-hover);
-		border-color: var(--accent-hover);
-		color: white;
+		background: var(--text-secondary);
+		border-color: var(--text-secondary);
+		color: var(--bg);
 	}
 
 	.filter-count {
