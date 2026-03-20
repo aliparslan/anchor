@@ -125,47 +125,53 @@
 		}
 	});
 
-	const progressPercent = $derived(Math.min(100, (totalMinutesToday / FOCUS_GOAL) * 100));
+	const filledDots = $derived(Math.min(96, Math.floor(totalMinutesToday / 2.5)));
 	const focusHours = $derived(Math.floor(totalMinutesToday / 60));
 	const focusMins = $derived(totalMinutesToday % 60);
 </script>
 
-<div class="pomodoro-widget">
-	<div class="pomodoro-header">
-		<span class="pomodoro-status">{statusLabel[state.status]}</span>
-		<div class="pomodoro-dots">
-			{#each Array(4) as _, i}
-				<span class="pomodoro-dot" class:filled={i < state.pomodorosCompleted}></span>
-			{/each}
+<div class="pomo-device">
+	<div class="pomo-screen">
+		<span class="pomo-session">Session {state.pomodorosCompleted + 1}</span>
+		<div class="pomo-time">{displayTime()}</div>
+		<div class="pomo-screen-status">
+			<span class="pomo-status-label">{statusLabel[state.status]}</span>
+			<div class="pomo-dots">
+				{#each Array(4) as _, i}
+					<span class="pomo-dot" class:pomo-dot-filled={i < state.pomodorosCompleted}></span>
+				{/each}
+			</div>
 		</div>
 	</div>
 
-	<div class="pomodoro-time">{displayTime()}</div>
-
-	<div class="pomodoro-controls">
-		<button class="pomodoro-btn" onclick={handleStartPause} aria-label={isRunning(state) ? 'Pause' : 'Start'}>
-			{#if isRunning(state)}
-				<Pause size={16} weight="fill" />
-			{:else}
-				<Play size={16} weight="fill" />
-			{/if}
+	<div class="pomo-controls">
+		<button class="pomo-btn pomo-btn-primary" class:pomo-btn-active={isRunning(state)} onclick={handleStartPause}>
+			<span class="pomo-btn-label">{isRunning(state) ? 'Pause' : state.pausedAt !== null ? 'Resume' : 'Start'}</span>
+			<span class="pomo-btn-icon">
+				{#if isRunning(state)}
+					<Pause size={16} weight="fill" />
+				{:else}
+					<Play size={16} weight="fill" />
+				{/if}
+			</span>
 		</button>
-		<button class="pomodoro-btn" onclick={handleReset} aria-label="Reset">
-			<ArrowCounterClockwise size={14} weight="bold" />
+		<button class="pomo-btn pomo-btn-secondary" onclick={handleReset}>
+			<span class="pomo-btn-label">Reset</span>
+			<span class="pomo-btn-icon">
+				<ArrowCounterClockwise size={14} weight="bold" />
+			</span>
 		</button>
 	</div>
 
-	<div class="pomodoro-progress-section">
-		<div class="pomodoro-progress-bar">
-			<div class="pomodoro-progress-fill" style="width: {progressPercent}%"></div>
-		</div>
-		<span class="pomodoro-progress-label">
-			{focusHours}h{focusMins > 0 ? ` ${focusMins}m` : ''} / 4h
-		</span>
+	<div class="pomo-grille">
+		{#each Array(96) as _, i}
+			{@const col = i % 24}
+			{@const row = Math.floor(i / 24)}
+			{@const dotIndex = col * 4 + (3 - row)}
+			<span class="pomo-grille-dot" class:pomo-grille-dot-filled={dotIndex < filledDots}></span>
+		{/each}
 	</div>
-	{#if notifPermission === 'default'}
-		<button class="pomodoro-notif-btn" onclick={requestNotificationPermission}>
-			Enable notifications
-		</button>
-	{/if}
+	<span class="pomo-focus-label">
+		{focusHours}h{focusMins > 0 ? ` ${focusMins}m` : ''} / 4h
+	</span>
 </div>

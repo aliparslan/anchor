@@ -3,7 +3,7 @@
 		fetchHabitsToday, toggleHabit, toggleWorkout, saveWorkoutNote,
 		fetchMoodToday, saveMood, fetchStreaks, fetchHabitsWeek,
 		fetchCustomHabits, addCustomHabit, deleteCustomHabit,
-		fetchWaterToday, incrementWater, decrementWater, fetchWaterWeek,
+		fetchWaterToday, incrementWater, decrementWater, setWater, fetchWaterWeek,
 		fetchAchievements,
 		type HabitsToday, type HabitsWeek, type CustomHabit, type Achievement, type WaterDay
 	} from '$lib/api';
@@ -15,7 +15,9 @@
 	import { theme, toggleTheme } from '$lib/theme';
 	import { getCached, setCached, clearCached } from '$lib/cache';
 	import { onDestroy } from 'svelte';
-	import { Check, X, Plus, Minus, Drop, PintGlass, Trophy, Moon, Sun } from 'phosphor-svelte';
+	import { tweened } from 'svelte/motion';
+	import { cubicOut } from 'svelte/easing';
+	import { Check, X, Plus, PintGlass, CheckCircle, Trophy, Moon, Sun } from 'phosphor-svelte';
 	import { tap, success } from '$lib/haptics';
 	import { getScore, onScoreChange } from '$lib/score';
 	import type { DailyScore } from '$lib/api';
@@ -35,6 +37,13 @@
 	let showAddHabit = $state(false);
 	let newHabitName = $state('');
 	let waterGlasses = $state(_c?.waterGlasses ?? 0);
+	const displayedMl = tweened((_c?.waterGlasses ?? 0) * 250, { easing: cubicOut });
+
+	$effect(() => {
+		const targetMl = waterGlasses * 250;
+		displayedMl.set(targetMl, { duration: Math.min(800, Math.abs(targetMl - $displayedMl) / 250 * 200) });
+	});
+
 	let achievements = $state<Achievement[]>([]);
 
 	function formatDate(): string {
@@ -109,23 +118,59 @@
 
 	let waterWeek = $state<WaterDay[]>([]);
 	let waterExpanded = $state(false);
+	let waterCelebrated = $state(false);
+	let cupsContainer: HTMLDivElement;
+	let displayedGlasses = $state(_c?.waterGlasses ?? 0);
+	let glassStepTimer: ReturnType<typeof setTimeout> | null = null;
+
+	function animateGlasses(target: number) {
+		if (glassStepTimer) clearTimeout(glassStepTimer);
+		function step() {
+			if (displayedGlasses === target) return;
+			displayedGlasses += displayedGlasses < target ? 1 : -1;
+			if (displayedGlasses !== target) {
+				glassStepTimer = setTimeout(step, 100);
+			}
+		}
+		step();
+	}
+
+	$effect(() => {
+		if (displayedGlasses >= 8 && !waterCelebrated) {
+			waterCelebrated = true;
+			if (cupsContainer) {
+				const cups = cupsContainer.querySelectorAll('.water-cup');
+				cups.forEach((cup, i) => {
+					cup.animate([
+						{ transform: 'scale(1)' },
+						{ transform: 'scale(1.25) rotate(-8deg)' },
+						{ transform: 'scale(1.1) rotate(4deg)' },
+						{ transform: 'scale(1) rotate(0)' }
+					], { duration: 400, easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)', delay: i * 50 });
+				});
+			}
+		} else if (displayedGlasses < 8 && waterCelebrated) {
+			waterCelebrated = false;
+		}
+	});
 
 	async function handleWaterIncrement() {
 		tap();
 		waterGlasses = await incrementWater();
+		animateGlasses(waterGlasses);
 	}
 	async function handleWaterDecrement() {
 		tap();
 		waterGlasses = await decrementWater();
+		animateGlasses(waterGlasses);
 	}
 	async function handleWaterTap(target: number) {
 		tap();
-		while (waterGlasses < target) {
-			waterGlasses = await incrementWater();
-		}
-		while (waterGlasses > target) {
-			waterGlasses = await decrementWater();
-		}
+		waterGlasses = target;
+		animateGlasses(target);
+		setWater(target).then((actual) => {
+			if (actual !== target) { waterGlasses = actual; animateGlasses(actual); }
+		});
 	}
 	async function toggleWaterInsights() {
 		waterExpanded = !waterExpanded;
@@ -164,11 +209,14 @@
 
 	// Always fetch water data on mount (even if cached) to ensure freshness
 	$effect(() => {
-		fetchWaterToday().then((g) => { waterGlasses = g; });
+		fetchWaterToday().then((g) => {
+			if (g !== waterGlasses) { waterGlasses = g; animateGlasses(g); }
+		});
 	});
 
 	onDestroy(() => {
 		if (workoutNoteTimeout) clearTimeout(workoutNoteTimeout);
+		if (glassStepTimer) clearTimeout(glassStepTimer);
 		setCached('track', { habits, mood, streaks, weekData, customHabits, waterGlasses, achievements });
 	});
 </script>
@@ -209,12 +257,12 @@
 </div>
 <div class="water-widget">
 	<div class="water-header">
-		<span class="water-amount">{waterGlasses * 250}<span class="water-unit"> / 2,000ml</span></span>
+		<span class="water-ml" class:water-ml-complete={waterGlasses >= 8}>{Math.round($displayedMl).toLocaleString()}</span><span class="water-ml-total">/2,000</span><span class="water-ml-unit">ml</span>
 	</div>
-	<div class="water-cups">
+	<div class="water-cups" bind:this={cupsContainer}>
 		{#each Array(8) as _, i}
-			<button class="water-cup" class:water-cup-filled={i < waterGlasses} onclick={() => handleWaterTap(i < waterGlasses && i === waterGlasses - 1 ? i : i + 1)} aria-label="Glass {i + 1}">
-				<PintGlass size={28} weight={i < waterGlasses ? "fill" : "duotone"} />
+			<button class="water-cup" class:water-cup-filled={i < displayedGlasses} onclick={() => handleWaterTap(i < waterGlasses && i === waterGlasses - 1 ? i : i + 1)} aria-label="Glass {i + 1}">
+				<PintGlass size={28} weight={i < displayedGlasses ? "fill" : "duotone"} />
 			</button>
 		{/each}
 	</div>
@@ -225,7 +273,13 @@
 		<div class="water-chart">
 			{#each waterWeek as day}
 				<div class="water-chart-col">
+					{#if day.glasses >= 8}
+						<div class="water-chart-check">
+							<CheckCircle size={14} weight="fill" />
+						</div>
+					{/if}
 					<div class="water-chart-bar-wrap">
+						<div class="water-chart-bar-bg"></div>
 						<div class="water-chart-bar" style="height: {Math.min(100, (day.glasses / 8) * 100)}%"></div>
 					</div>
 					<span class="water-chart-label">{new Date(day.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 3)}</span>
@@ -589,21 +643,38 @@
 	}
 
 	.water-header {
+		display: flex;
+		align-items: baseline;
+		gap: 0;
 		margin-bottom: 12px;
 	}
 
-	.water-amount {
-		font-family: var(--font-display);
-		font-size: 24px;
-		font-weight: 600;
+	.water-ml {
+		font-family: var(--font-mono);
+		font-size: 28px;
+		font-weight: 500;
 		color: var(--text);
+		letter-spacing: -0.02em;
+		transition: color 0.3s ease;
 	}
 
-	.water-unit {
-		font-family: var(--font-sans);
-		font-size: 14px;
+	.water-ml-complete {
+		color: #3b82f6;
+	}
+
+	.water-ml-total {
+		font-family: var(--font-mono);
+		font-size: 16px;
 		font-weight: 400;
 		color: var(--text-tertiary);
+	}
+
+	.water-ml-unit {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-weight: 400;
+		color: var(--text-tertiary);
+		margin-left: 2px;
 	}
 
 	.water-cups {
@@ -623,7 +694,7 @@
 		background: none;
 		color: var(--border);
 		cursor: pointer;
-		transition: all 0.15s ease;
+		transition: color 0.15s ease, background 0.15s ease;
 		border-radius: 6px;
 	}
 
@@ -642,14 +713,14 @@
 	.water-insights-toggle {
 		display: block;
 		width: 100%;
-		padding: 8px;
+		padding: 10px;
 		border: none;
 		border-top: 1px solid var(--border);
 		background: none;
 		color: #3b82f6;
 		font-family: var(--font-sans);
 		font-size: 13px;
-		font-weight: 500;
+		font-weight: 600;
 		cursor: pointer;
 		transition: opacity 0.15s ease;
 	}
@@ -664,7 +735,7 @@
 		align-items: flex-end;
 		gap: 6px;
 		padding: 16px 0 4px;
-		height: 120px;
+		height: 140px;
 	}
 
 	.water-chart-col {
@@ -672,8 +743,13 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 6px;
+		gap: 4px;
 		height: 100%;
+	}
+
+	.water-chart-check {
+		color: #3b82f6;
+		flex-shrink: 0;
 	}
 
 	.water-chart-bar-wrap {
@@ -682,21 +758,35 @@
 		display: flex;
 		align-items: flex-end;
 		justify-content: center;
+		position: relative;
+	}
+
+	.water-chart-bar-bg {
+		position: absolute;
+		bottom: 0;
+		width: 70%;
+		max-width: 24px;
+		height: 100%;
+		background: rgba(59, 130, 246, 0.12);
+		border-radius: 4px;
 	}
 
 	.water-chart-bar {
 		width: 70%;
 		max-width: 24px;
 		background: #3b82f6;
-		border-radius: 4px 4px 2px 2px;
+		border-radius: 4px;
 		min-height: 4px;
 		transition: height 0.3s ease;
+		position: relative;
+		z-index: 1;
 	}
 
 	.water-chart-label {
 		font-family: var(--font-mono);
 		font-size: 10px;
 		color: var(--text-tertiary);
+		flex-shrink: 0;
 	}
 
 	.water-chart-empty {

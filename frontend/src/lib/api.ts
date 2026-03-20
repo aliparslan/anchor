@@ -526,6 +526,14 @@ export async function decrementWater(): Promise<number> {
 	const data = await apiFetch<{ glasses: number }>(`${BASE}/api/water/decrement`, { method: 'POST' });
 	return data.glasses;
 }
+export async function setWater(glasses: number): Promise<number> {
+	const data = await apiFetch<{ glasses: number }>(`${BASE}/api/water/set`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ glasses })
+	});
+	return data.glasses;
+}
 export interface WaterDay { date: string; glasses: number; }
 export async function fetchWaterWeek(): Promise<WaterDay[]> {
 	return apiFetch<WaterDay[]>(`${BASE}/api/water/week`);

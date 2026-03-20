@@ -1459,6 +1459,20 @@ async def decrement_water(today_str: str) -> int:
         await db.close()
 
 
+async def set_water(today_str: str, glasses: int) -> int:
+    glasses = max(0, min(glasses, 20))
+    db = await get_db()
+    try:
+        await db.execute(
+            "INSERT INTO water_log (date, glasses) VALUES (?, ?) ON CONFLICT(date) DO UPDATE SET glasses = ?",
+            (today_str, glasses, glasses),
+        )
+        await db.commit()
+        return glasses
+    finally:
+        await db.close()
+
+
 async def get_water_week() -> list[dict]:
     db = await get_db()
     try:
