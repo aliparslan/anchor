@@ -74,6 +74,7 @@ from db import (
     get_water_today,
     increment_water,
     decrement_water,
+    set_water,
     get_water_week,
     get_gratitudes,
     save_gratitude,
@@ -164,6 +165,10 @@ class ReadingQueueBody(BaseModel):
     title: str
     url: str
     domain: str | None = None
+
+
+class WaterSetBody(BaseModel):
+    glasses: int
 
 
 class SleepBody(BaseModel):
@@ -769,6 +774,12 @@ async def api_water_increment():
 async def api_water_decrement():
     today = date.today().isoformat()
     glasses = await decrement_water(today)
+    return {"glasses": glasses}
+
+@app.post("/api/water/set")
+async def api_water_set(body: WaterSetBody):
+    today = date.today().isoformat()
+    glasses = await set_water(today, body.glasses)
     return {"glasses": glasses}
 
 @app.get("/api/water/week")

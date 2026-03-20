@@ -674,43 +674,104 @@ a:hover {
 	margin-bottom: var(--space-section);
 }
 
-/* Pomodoro timer */
-.pomodoro-widget {
-	padding: 16px;
-	border-radius: 10px;
+/* Pomodoro device */
+.pomo-device {
+	border-radius: 16px;
 	background: var(--card-bg);
 	border: 1px solid var(--border);
+	padding: 14px;
+	box-shadow:
+		0 1px 0 rgba(0, 0, 0, 0.04),
+		0 4px 12px rgba(0, 0, 0, 0.06),
+		0 12px 24px rgba(0, 0, 0, 0.04);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
 }
 
-.pomodoro-header {
+[data-theme='dark'] .pomo-device {
+	border-color: rgba(255, 255, 255, 0.06);
+	box-shadow:
+		0 1px 0 rgba(255, 255, 255, 0.03),
+		0 4px 12px rgba(0, 0, 0, 0.3),
+		0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+.pomo-screen {
+	background: var(--bg-inset);
+	border-radius: 10px;
+	padding: 20px 16px 16px;
+	border: 1px solid rgba(0, 0, 0, 0.06);
+	box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+}
+
+[data-theme='dark'] .pomo-screen {
+	background: var(--bg-inset);
+	border-color: rgba(0, 0, 0, 0.2);
+	box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.pomo-session {
+	font-family: var(--font-mono);
+	font-size: 10px;
+	font-weight: 500;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--text-secondary);
+}
+
+.pomo-time {
+	font-family: var(--font-mono);
+	font-size: 52px;
+	font-weight: 400;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: -0.03em;
+	line-height: 1;
+	color: var(--text);
+	padding: 8px 0;
+}
+
+.pomo-screen-status {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	margin-bottom: 8px;
+	width: 100%;
+	margin-top: 4px;
 }
 
-.pomodoro-status {
-	font-family: var(--font-display);
-	font-size: 13px;
-	font-weight: 600;
-	color: var(--text);
+.pomo-status-label {
+	font-family: var(--font-mono);
+	font-size: 11px;
+	font-weight: 500;
+	color: var(--text-secondary);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
 }
 
-.pomodoro-dots {
+.pomo-dots {
 	display: flex;
 	gap: 6px;
 }
 
-.pomodoro-dot {
-	width: 10px;
-	height: 10px;
+.pomo-dot {
+	width: 8px;
+	height: 8px;
 	border-radius: 50%;
-	background: var(--bg-inset);
+	background: rgba(0, 0, 0, 0.1);
 	transition: all 0.2s ease;
 }
 
-.pomodoro-dot.filled {
+[data-theme='dark'] .pomo-dot {
+	background: rgba(255, 255, 255, 0.1);
+}
+
+.pomo-dot-filled {
 	background: var(--accent);
+	box-shadow: none;
 	animation: dotPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -720,95 +781,125 @@ a:hover {
 	100% { transform: scale(1); }
 }
 
-.pomodoro-time {
-	font-family: var(--font-mono);
-	font-size: 28px;
-	font-weight: 400;
-	font-variant-numeric: tabular-nums;
-	letter-spacing: -0.02em;
-	text-align: center;
-	margin-bottom: 10px;
-	line-height: 1;
-}
-
-.pomodoro-controls {
+.pomo-controls {
 	display: flex;
-	justify-content: center;
 	gap: 8px;
-	margin-bottom: 14px;
 }
 
-.pomodoro-btn {
+.pomo-btn {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 14px;
+	border-radius: 10px;
+	border: 1px solid var(--border);
+	cursor: pointer;
+	transition: all 0.1s ease;
+	box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] .pomo-btn {
+	box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.pomo-btn:active {
+	box-shadow: none;
+	transform: translateY(2px);
+}
+
+.pomo-btn-label {
+	font-family: var(--font-mono);
+	font-size: 11px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+
+.pomo-btn-icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 36px;
-	height: 36px;
-	border-radius: 8px;
-	border: 1px solid var(--border);
-	background: var(--bg);
-	color: var(--text-secondary);
-	cursor: pointer;
-	transition: all 0.15s ease;
 }
 
-.pomodoro-btn:hover {
+.pomo-btn-primary {
+	background: var(--accent);
+	color: var(--bg);
+	border-color: var(--accent);
+	box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='dark'] .pomo-btn-primary {
+	box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+.pomo-btn-primary:hover {
+	background: var(--accent-hover);
+}
+
+.pomo-btn-active {
+	background: var(--text-secondary);
+	border-color: var(--text-secondary);
+	box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
+}
+
+[data-theme='dark'] .pomo-btn-active {
+	box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.pomo-btn-secondary {
+	background: var(--card-bg);
+	color: var(--text-secondary);
+}
+
+[data-theme='dark'] .pomo-btn-secondary {
+	background: var(--bg-inset);
+	color: var(--text-tertiary);
+}
+
+.pomo-btn-secondary:hover {
 	background: var(--bg-hover);
 	color: var(--text);
-	border-color: var(--text-tertiary);
 }
 
-.pomodoro-btn:active {
-	background: var(--bg-inset);
-	transform: scale(0.9);
+[data-theme='dark'] .pomo-btn-secondary:hover {
+	background: var(--border);
+	color: var(--text);
 }
 
-.pomodoro-progress-section {
-	display: flex;
-	align-items: center;
-	gap: 8px;
+.pomo-grille {
+	display: grid;
+	grid-template-columns: repeat(24, 1fr);
+	gap: 3px;
+	padding: 0 6px;
+	justify-items: center;
 }
 
-.pomodoro-progress-bar {
-	flex: 1;
+.pomo-grille-dot {
+	width: 5px;
 	height: 5px;
-	border-radius: 3px;
-	background: var(--bg-inset);
-	overflow: hidden;
+	border-radius: 50%;
+	background: rgba(0, 0, 0, 0.08);
+	transition: background 0.2s ease;
 }
 
-.pomodoro-progress-fill {
-	height: 100%;
-	border-radius: 3px;
+[data-theme='dark'] .pomo-grille-dot {
+	background: rgba(255, 255, 255, 0.08);
+}
+
+.pomo-grille-dot-filled {
 	background: var(--accent);
-	transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.pomodoro-progress-label {
+[data-theme='dark'] .pomo-grille-dot-filled {
+	background: var(--accent);
+}
+
+.pomo-focus-label {
 	font-family: var(--font-mono);
-	font-size: 11px;
+	font-size: 10px;
 	color: var(--text-tertiary);
-	white-space: nowrap;
-}
-
-.pomodoro-notif-btn {
-	width: 100%;
-	margin-top: 10px;
-	padding: 5px;
-	border: 1px solid var(--border);
-	border-radius: 6px;
-	background: none;
-	color: var(--text-tertiary);
-	font-size: 11px;
-	font-family: inherit;
-	cursor: pointer;
-	transition: all 0.15s ease;
-}
-
-.pomodoro-notif-btn:hover {
-	background: var(--bg-hover);
-	color: var(--text-secondary);
-	border-color: var(--text-tertiary);
+	text-align: center;
 }
 
 /* Journal card */
