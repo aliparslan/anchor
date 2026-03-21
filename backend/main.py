@@ -4,9 +4,12 @@ import base64
 from contextlib import asynccontextmanager
 from datetime import date
 import json
+import logging
 from pathlib import Path
 import platform
 import time
+
+logger = logging.getLogger(__name__)
 
 import psutil
 
@@ -58,10 +61,6 @@ from db import (
     save_workout_note,
     get_mood,
     save_mood,
-    get_captures,
-    save_capture,
-    archive_capture,
-    delete_capture,
     get_habits_week,
     get_streaks,
     get_daily_summary,
@@ -149,27 +148,27 @@ async def send_push_to_all(title: str, body: str):
 
 
 class JournalBody(BaseModel):
-    content: str
+    content: str = Field(max_length=50000)
 
 
 class ZipBody(BaseModel):
-    zip_code: str
+    zip_code: str = Field(max_length=20)
 
 
 class PushSubscriptionBody(BaseModel):
-    endpoint: str
-    p256dh: str
-    auth: str
+    endpoint: str = Field(max_length=2000)
+    p256dh: str = Field(max_length=500)
+    auth: str = Field(max_length=500)
 
 
 class MitBody(BaseModel):
-    text: str
+    text: str = Field(max_length=2000)
 
 
 class ReadingQueueBody(BaseModel):
     hn_id: int | None = None
-    title: str
-    url: str
+    title: str = Field(max_length=500)
+    url: str = Field(max_length=2000)
     domain: str | None = None
 
 
@@ -183,19 +182,15 @@ class SleepBody(BaseModel):
 
 
 class WorkoutNoteBody(BaseModel):
-    note: str
+    note: str = Field(max_length=2000)
 
 
 class MoodBody(BaseModel):
     mood: int = Field(ge=1, le=5)
 
 
-class CaptureBody(BaseModel):
-    text: str
-
-
 class GratitudeBody(BaseModel):
-    text: str
+    text: str = Field(max_length=2000)
 
 
 class CustomHabitBody(BaseModel):
@@ -474,8 +469,8 @@ _timer_task: asyncio.Task | None = None
 
 class TimerScheduleBody(BaseModel):
     fire_at: float  # Unix timestamp in seconds
-    title: str = "Anchor"
-    body: str = "Timer complete!"
+    title: str = Field(default="Anchor", max_length=200)
+    body: str = Field(default="Timer complete!", max_length=2000)
 
 
 @app.post("/api/push/schedule-timer")
@@ -485,7 +480,6 @@ async def api_schedule_timer(req: TimerScheduleBody):
         _timer_task.cancel()
 
     async def _fire():
-        delay = max(0, req.fire_at - asyncio.get_event_loop().time() + (req.fire_at - time.time()))
         delay = max(0, req.fire_at - time.time())
         await asyncio.sleep(delay)
         await send_push_to_all(req.title, req.body)
@@ -631,33 +625,6 @@ async def api_save_mood_today(body: MoodBody):
     return {"mood": mood}
 
 
-# --- Quick Capture ---
-
-
-@app.get("/api/captures")
-async def api_captures():
-    captures = await get_captures()
-    return {"captures": captures}
-
-
-@app.post("/api/captures")
-async def api_save_capture(body: CaptureBody):
-    capture = await save_capture(body.text)
-    return {"capture": capture}
-
-
-@app.post("/api/captures/{capture_id}/archive")
-async def api_archive_capture(capture_id: int):
-    await archive_capture(capture_id)
-    return {"ok": True}
-
-
-@app.delete("/api/captures/{capture_id}")
-async def api_delete_capture(capture_id: int):
-    await delete_capture(capture_id)
-    return {"ok": True}
-
-
 # --- Aggregation ---
 
 
@@ -769,6 +736,7 @@ async def api_claude_status():
             "last_computed": data.get("lastComputedDate", ""),
         }
     except Exception:
+        logger.exception("Claude API status fetch failed")
         return {"available": False}
 
 
@@ -805,6 +773,7 @@ async def api_tailscale_status():
             "peers": peers,
         }
     except Exception:
+        logger.exception("Tailscale status fetch failed")
         return {"available": False}
 
 
@@ -903,8 +872,8 @@ async def api_iss_status():
                     "longitude": float(pos.get("longitude", 0)),
                     "timestamp": data.get("timestamp", 0),
                 }
-    except Exception as e:
-        print(f"[ISS] Error: {e}")
+    except Exception:
+        logger.exception("ISS position fetch failed")
         return {"available": False}
 
 
