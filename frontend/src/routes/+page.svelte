@@ -3,21 +3,20 @@
 		fetchPomodoroToday,
 		fetchWeather, setWeatherZip,
 		fetchVapidPublicKey, registerPushSubscription,
-		fetchDailyStreak,
-		type WeatherData, type DailyScore
+		type WeatherData
 	} from '$lib/api';
-	import { getScore, refreshScore, onScoreChange } from '$lib/score';
-	import { theme, toggleTheme } from '$lib/theme';
 	import { getCached, setCached } from '$lib/cache';
 	import { onDestroy } from 'svelte';
 	import PomodoroTimer from '$lib/components/PomodoroTimer.svelte';
 	import JournalCard from '$lib/components/JournalCard.svelte';
 	import MitInput from '$lib/components/MitInput.svelte';
-	import ShutdownModal from '$lib/components/ShutdownModal.svelte';
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import SectionHeader from '$lib/components/SectionHeader.svelte';
 	import Confetti from '$lib/components/Confetti.svelte';
 	import facts from '$lib/facts.json';
+	import { localDate } from '$lib/utils';
 	import {
-		Moon, Sun, Fire, X, Lightbulb, CaretDown,
+		Moon, Sun, X, Lightbulb, CaretDown,
 		CloudSun, Cloud, CloudRain, CloudSnow, CloudLightning
 	} from 'phosphor-svelte';
 
@@ -25,14 +24,11 @@
 	const _c = getCached<any>('home');
 
 	let loading = $state(!_c);
+	let fetchError = $state(false);
 	let pomodoroMinutes = $state(_c?.pomodoroMinutes ?? 0);
-	let showShutdown = $state(false);
 	let showConfetti = $state(false);
-	let streak = $state(_c?.streak ?? 0);
-	let dailyScore = $state<DailyScore | null>(_c?.dailyScore ?? getScore());
-	$effect(() => { return onScoreChange((s) => dailyScore = s); });
 	let factDismissed = $state(
-		typeof window !== 'undefined' && localStorage.getItem('fact_dismissed_date') === new Date().toISOString().split('T')[0]
+		typeof window !== 'undefined' && localStorage.getItem('fact_dismissed_date') === localDate()
 	);
 
 	const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
@@ -142,14 +138,14 @@
 	}
 
 	let confettiShown = $state(
-		typeof window !== 'undefined' && localStorage.getItem('confetti_date') === new Date().toISOString().split('T')[0]
+		typeof window !== 'undefined' && localStorage.getItem('confetti_date') === localDate()
 	);
 	$effect(() => {
 		if (pomodoroMinutes >= 240 && !confettiShown) {
 			confettiShown = true;
 			showConfetti = true;
 			if (typeof window !== 'undefined') {
-				localStorage.setItem('confetti_date', new Date().toISOString().split('T')[0]);
+				localStorage.setItem('confetti_date', localDate());
 			}
 		}
 	});
@@ -160,10 +156,9 @@
 		setupPushNotifications();
 		Promise.all([
 			fetchPomodoroToday(),
-			fetchWeather(),
-			fetchDailyStreak()
+			fetchWeather()
 		])
-			.then(([pomodoro, weatherData, streakVal]) => {
+			.then(([pomodoro, weatherData]) => {
 				pomodoroMinutes = pomodoro.total_minutes;
 				if (weatherData.weather) {
 					weather = weatherData.weather;
@@ -171,9 +166,8 @@
 				}
 				weatherZip = weatherData.zip_code;
 				if (!weatherData.zip_code) showZipInput = true;
-				streak = streakVal;
 			})
-			.catch((err) => console.warn('[Home] fetch error:', err))
+			.catch((err) => { console.warn('[Home] fetch error:', err); fetchError = true; })
 			.finally(() => {
 				loading = false;
 			});
@@ -183,7 +177,7 @@
 	onDestroy(() => {
 		setCached('home', {
 			weather, weatherLocation, weatherZip, showZipInput,
-			pomodoroMinutes, streak, dailyScore
+			pomodoroMinutes
 		});
 	});
 
@@ -191,37 +185,10 @@
 </script>
 
 <div class:quiet-hours={isQuietHours()}>
-	<div class="page-header">
-		<div>
-			<h1 class="greeting">{getGreeting()}</h1>
-			{#if streak > 0}
-				<div class="greeting-meta">
-					<span class="streak"><Fire size={14} weight="duotone" /> {streak} {streak === 1 ? 'day' : 'days'}</span>
-				</div>
-			{/if}
-		</div>
-		<div class="page-header-actions">
-			{#if dailyScore !== null}
-				<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-				<div class="score-ring" title="{dailyScore.score}/100 — tap for details" onclick={() => showShutdown = true} style="cursor: pointer">
-					<svg viewBox="0 0 36 36" class="score-ring-svg">
-						<circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--border)" stroke-width="3" />
-						<circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--accent)" stroke-width="3"
-							stroke-dasharray="{dailyScore.score * 0.9749} {97.49 - dailyScore.score * 0.9749}"
-							stroke-dashoffset="0" stroke-linecap="round" />
-					</svg>
-					<span class="score-ring-text">{dailyScore.score}</span>
-				</div>
-			{/if}
-			<button class="theme-toggle" onclick={toggleTheme} aria-label="Toggle theme">
-				{#if $theme === 'light'}
-					<Moon size={18} weight="duotone" />
-				{:else}
-					<Sun size={18} weight="duotone" />
-				{/if}
-			</button>
-		</div>
-	</div>
+	{#if fetchError}
+		<p class="fetch-error">Couldn't load some data</p>
+	{/if}
+	<PageHeader title={getGreeting()} />
 
 	{#if loading && !weather}
 		<div class="weather-line">
@@ -317,30 +284,23 @@
 			<span class="fact-text">{dailyFact}</span>
 			<button class="fact-dismiss" onclick={() => {
 				factDismissed = true;
-				localStorage.setItem('fact_dismissed_date', new Date().toISOString().split('T')[0]);
+				localStorage.setItem('fact_dismissed_date', localDate());
 			}} aria-label="Dismiss">
 				<X size={12} weight="bold" />
 			</button>
 		</div>
 	{/if}
 
-	<div class="section-header">
-		<span class="section-title">Priority</span>
-	</div>
+	<SectionHeader title="Priority" />
 	<MitInput />
 
-	<div class="section-header" style="margin-top: var(--space-widget)">
-		<span class="section-title">Focus</span>
-	</div>
+	<SectionHeader title="Focus" style="margin-top: var(--space-widget)" />
 	<div class="home-top">
 		<PomodoroTimer bind:totalMinutesToday={pomodoroMinutes} />
 	</div>
 
-	<div class="section-header">
-		<span class="section-title">Journal</span>
-	</div>
+	<SectionHeader title="Journal" />
 	<JournalCard />
 
-	<ShutdownModal open={showShutdown} onclose={() => { showShutdown = false; refreshScore(); }} />
 	<Confetti trigger={showConfetti} />
 </div>

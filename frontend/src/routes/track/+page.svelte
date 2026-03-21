@@ -12,18 +12,14 @@
 	import HabitWeekView from '$lib/components/HabitWeekView.svelte';
 	import FocusHeatmap from '$lib/components/FocusHeatmap.svelte';
 	import WeeklyReview from '$lib/components/WeeklyReview.svelte';
-	import { theme, toggleTheme } from '$lib/theme';
 	import { getCached, setCached, clearCached } from '$lib/cache';
 	import { onDestroy } from 'svelte';
 	import { tweened } from 'svelte/motion';
 	import { cubicOut } from 'svelte/easing';
-	import { Check, X, Plus, PintGlass, CheckCircle, Trophy, Moon, Sun } from 'phosphor-svelte';
+	import { Check, X, Plus, PintGlass, CheckCircle, Trophy } from 'phosphor-svelte';
 	import { tap, success } from '$lib/haptics';
-	import { getScore, onScoreChange } from '$lib/score';
-	import type { DailyScore } from '$lib/api';
-
-	let dailyScore = $state<DailyScore | null>(getScore());
-	$effect(() => { return onScoreChange((s) => dailyScore = s); });
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import SectionHeader from '$lib/components/SectionHeader.svelte';
 
 	const _c = getCached<any>('track');
 
@@ -221,40 +217,14 @@
 	});
 </script>
 
-<div class="page-header">
-	<h1 class="greeting">Track</h1>
-	<div class="page-header-actions">
-		{#if dailyScore !== null}
-			<div class="score-ring" title="{dailyScore.score}/100">
-				<svg viewBox="0 0 36 36" class="score-ring-svg">
-					<circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--border)" stroke-width="3" />
-					<circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--accent)" stroke-width="3"
-						stroke-dasharray="{dailyScore.score * 0.9749} {97.49 - dailyScore.score * 0.9749}"
-						stroke-dashoffset="0" stroke-linecap="round" />
-				</svg>
-				<span class="score-ring-text">{dailyScore.score}</span>
-			</div>
-		{/if}
-		<button class="theme-toggle" onclick={toggleTheme} aria-label="Toggle theme">
-			{#if $theme === 'light'}
-				<Moon size={18} weight="duotone" />
-			{:else}
-				<Sun size={18} weight="duotone" />
-			{/if}
-		</button>
-	</div>
-</div>
+<PageHeader title="Track" />
 
 <p class="habits-date">{formatDate()}</p>
 
-<div class="section-header">
-	<span class="section-title">Mood</span>
-</div>
+<SectionHeader title="Mood" />
 <MoodSelector {mood} onselect={handleMoodSelect} />
 
-<div class="section-header" style="margin-top: var(--space-widget)">
-	<span class="section-title">Hydration</span>
-</div>
+<SectionHeader title="Hydration" style="margin-top: var(--space-widget)" />
 <div class="water-widget">
 	<div class="water-header">
 		<span class="water-ml" class:water-ml-complete={waterGlasses >= 8}>{Math.round($displayedMl).toLocaleString()}</span><span class="water-ml-total">/2,000</span><span class="water-ml-unit">ml</span>
@@ -292,9 +262,7 @@
 	{/if}
 </div>
 
-<div class="section-header" style="margin-top: var(--space-widget)">
-	<span class="section-title">Habits</span>
-</div>
+<SectionHeader title="Habits" style="margin-top: var(--space-widget)" />
 {#if habits}
 	<div class="habits-list">
 		<!-- Focus — auto -->
@@ -448,14 +416,10 @@
 
 <div class="track-spacer"></div>
 
-<div class="section-header">
-	<span class="section-title">Sleep</span>
-</div>
+<SectionHeader title="Sleep" />
 <SleepLogger />
 
-<div class="section-header track-section-header">
-	<span class="section-title">Insights</span>
-</div>
+<SectionHeader title="Insights" style="margin-top: var(--space-widget)" />
 
 <HabitWeekView data={weekData} />
 
@@ -464,9 +428,7 @@
 <WeeklyReview />
 
 {#if achievements.length > 0}
-	<div class="section-header track-section-header">
-		<span class="section-title">Achievements</span>
-	</div>
+	<SectionHeader title="Achievements" style="margin-top: var(--space-widget)" />
 		<div class="achievements-grid">
 			{#each achievements as a}
 				<div class="achievement-badge">
@@ -795,10 +757,6 @@
 		text-align: center;
 		width: 100%;
 		padding: 24px 0;
-	}
-
-	.track-section-header {
-		margin-top: var(--space-widget);
 	}
 
 	.achievements-section {

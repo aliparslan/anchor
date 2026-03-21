@@ -2,16 +2,10 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { fetchJournal, saveJournal, fetchJournalDates, fetchJournalEntries, type JournalPreview } from '$lib/api';
 	import { CaretLeft, CaretRight } from 'phosphor-svelte';
-
-	/** Local date string (YYYY-MM-DD) — avoids the UTC rollover bug in toISOString() */
-	function localDate(d: Date = new Date()): string {
-		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-	}
+	import { localDate } from '$lib/utils';
+	import { createAutoSave } from '$lib/autoSave.svelte';
 
 	let content = $state('');
-	let savedIndicator = $state(false);
-	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
-	let indicatorTimeout: ReturnType<typeof setTimeout> | null = null;
 	let totalEntries = $state(0);
 	let entryDatesSet = $state<Set<string>>(new Set());
 	let currentDate = $state(localDate());
@@ -186,24 +180,17 @@
 		} catch {}
 	}
 
+	const autoSave = createAutoSave(async () => {
+		await saveJournal(currentDate, content);
+		await refreshDates();
+	});
+
 	function handleInput() {
-		if (saveTimeout) clearTimeout(saveTimeout);
-		saveTimeout = setTimeout(async () => {
-			try {
-				await saveJournal(currentDate, content);
-				await refreshDates();
-				savedIndicator = true;
-				if (indicatorTimeout) clearTimeout(indicatorTimeout);
-				indicatorTimeout = setTimeout(() => {
-					savedIndicator = false;
-				}, 2000);
-			} catch {}
-		}, 1500);
+		autoSave.trigger();
 	}
 
 	onDestroy(() => {
-		if (saveTimeout) clearTimeout(saveTimeout);
-		if (indicatorTimeout) clearTimeout(indicatorTimeout);
+		autoSave.cleanup();
 		window.removeEventListener('journal-updated', handleJournalUpdated);
 	});
 
@@ -236,7 +223,7 @@
 		</button>
 		<button class="jrnl-date-label" onclick={openDatePicker}>
 			{formatDateLabel(currentDate)}
-			{#if savedIndicator}
+			{#if autoSave.saved}
 				<span class="jrnl-saved-dot"></span>
 			{/if}
 		</button>

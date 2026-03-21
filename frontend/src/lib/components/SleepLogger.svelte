@@ -1,11 +1,12 @@
 <script lang="ts">
   import { fetchSleepToday, saveSleep, fetchSleepWeek, type SleepDay } from '$lib/api';
+  import { formatDuration } from '$lib/format';
   import { onDestroy } from 'svelte';
+  import { createAutoSave } from '$lib/autoSave.svelte';
 
   let bedtime = $state('');
   let wakeTime = $state('');
   let weekData = $state<SleepDay[]>([]);
-  let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 
   function computeDuration(): string {
     if (!bedtime || !wakeTime) return '';
@@ -20,22 +21,17 @@
     return diff;
   }
 
-  function formatDuration(mins: number): string {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return m > 0 ? `${h}h ${m}m` : `${h}h`;
-  }
+  const autoSave = createAutoSave(async () => {
+    await saveSleep(bedtime, wakeTime);
+  }, 800);
 
   onDestroy(() => {
-    if (saveTimeout) clearTimeout(saveTimeout);
+    autoSave.cleanup();
   });
 
   function handleChange() {
     if (!bedtime || !wakeTime) return;
-    if (saveTimeout) clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => {
-      saveSleep(bedtime, wakeTime);
-    }, 800);
+    autoSave.trigger();
   }
 
   $effect(() => {
