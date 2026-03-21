@@ -554,9 +554,3 @@ export async function searchAll(query: string): Promise<SearchResults> {
 export async function fetchDashboardAge(): Promise<{ days: number; since: string }> {
 	return apiFetch(`${BASE}/api/status/age`);
 }
-
-// --- Achievements ---
-export interface Achievement { id: number; name: string; description: string; earned_at: string; }
-export async function fetchAchievements(): Promise<{ achievements: Achievement[]; new: Achievement[] }> {
-	return apiFetch(`${BASE}/api/achievements`);
-}

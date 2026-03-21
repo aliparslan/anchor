@@ -4,8 +4,7 @@
 		fetchMoodToday, saveMood, fetchStreaks, fetchHabitsWeek,
 		fetchCustomHabits, addCustomHabit, deleteCustomHabit,
 		fetchWaterToday, incrementWater, decrementWater, setWater, fetchWaterWeek,
-		fetchAchievements,
-		type HabitsToday, type HabitsWeek, type CustomHabit, type Achievement, type WaterDay
+		type HabitsToday, type HabitsWeek, type CustomHabit, type WaterDay
 	} from '$lib/api';
 	import MoodSelector from '$lib/components/MoodSelector.svelte';
 	import SleepLogger from '$lib/components/SleepLogger.svelte';
@@ -16,7 +15,7 @@
 	import { onDestroy } from 'svelte';
 	import { tweened } from 'svelte/motion';
 	import { cubicOut } from 'svelte/easing';
-	import { Check, X, Plus, PintGlass, CheckCircle, Trophy } from 'phosphor-svelte';
+	import { Check, X, Plus, PintGlass, CheckCircle } from 'phosphor-svelte';
 	import { tap, success } from '$lib/haptics';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import SectionHeader from '$lib/components/SectionHeader.svelte';
@@ -39,8 +38,6 @@
 		const targetMl = waterGlasses * 250;
 		displayedMl.set(targetMl, { duration: Math.min(800, Math.abs(targetMl - $displayedMl) / 250 * 200) });
 	});
-
-	let achievements = $state<Achievement[]>([]);
 
 	function formatDate(): string {
 		return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
@@ -200,7 +197,6 @@
 			weekData = w;
 			customHabits = ch;
 		});
-		fetchAchievements().then((data) => { achievements = data.achievements; });
 	});
 
 	// Always fetch water data on mount (even if cached) to ensure freshness
@@ -213,7 +209,7 @@
 	onDestroy(() => {
 		if (workoutNoteTimeout) clearTimeout(workoutNoteTimeout);
 		if (glassStepTimer) clearTimeout(glassStepTimer);
-		setCached('track', { habits, mood, streaks, weekData, customHabits, waterGlasses, achievements });
+		setCached('track', { habits, mood, streaks, weekData, customHabits, waterGlasses });
 	});
 </script>
 
@@ -426,23 +422,6 @@
 <FocusHeatmap />
 
 <WeeklyReview />
-
-{#if achievements.length > 0}
-	<SectionHeader title="Achievements" style="margin-top: var(--space-widget)" />
-		<div class="achievements-grid">
-			{#each achievements as a}
-				<div class="achievement-badge">
-					<Trophy size={16} weight="duotone" />
-					<div class="achievement-info">
-						<span class="achievement-name">{a.description}</span>
-						<span class="achievement-date">
-							{new Date(a.earned_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-						</span>
-					</div>
-				</div>
-			{/each}
-		</div>
-{/if}
 
 <style>
 	.habit-streak {
@@ -759,42 +738,4 @@
 		padding: 24px 0;
 	}
 
-	.achievements-section {
-		margin-top: 16px;
-	}
-
-	.achievements-grid {
-		display: flex;
-		flex-direction: column;
-		gap: 8px;
-	}
-
-	.achievement-badge {
-		display: flex;
-		align-items: center;
-		gap: 10px;
-		padding: 10px 14px;
-		border-radius: 8px;
-		background: var(--card-bg);
-		color: var(--accent);
-	}
-
-	.achievement-info {
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-	}
-
-	.achievement-name {
-		font-family: var(--font-display);
-		font-size: 13px;
-		font-weight: 500;
-		color: var(--text);
-	}
-
-	.achievement-date {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		color: var(--text-tertiary);
-	}
 </style>

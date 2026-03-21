@@ -1,4 +1,3 @@
-import aiohttp
 import asyncio
 import base64
 from contextlib import asynccontextmanager
@@ -82,8 +81,6 @@ from db import (
     save_gratitude,
     get_random_gratitude,
     search_all,
-    get_achievements,
-    check_achievements,
 )
 from hn import fetch_top_hn_posts
 from youtube import fetch_youtube_recommendations
@@ -852,40 +849,6 @@ async def api_dashboard_age():
         first_launch = today
     days = (date.today() - date.fromisoformat(first_launch)).days
     return {"days": days, "since": first_launch}
-
-
-# --- ISS Tracker ---
-
-
-@app.get("/api/status/iss")
-async def api_iss_status():
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get("http://api.open-notify.org/iss-now.json", timeout=aiohttp.ClientTimeout(total=5)) as resp:
-                if resp.status != 200:
-                    return {"available": False}
-                data = await resp.json()
-                pos = data.get("iss_position", {})
-                return {
-                    "available": True,
-                    "latitude": float(pos.get("latitude", 0)),
-                    "longitude": float(pos.get("longitude", 0)),
-                    "timestamp": data.get("timestamp", 0),
-                }
-    except Exception:
-        logger.exception("ISS position fetch failed")
-        return {"available": False}
-
-
-# --- Achievements ---
-
-
-@app.get("/api/achievements")
-async def api_achievements():
-    today = date.today().isoformat()
-    newly_awarded = await check_achievements(today)
-    all_achievements = await get_achievements()
-    return {"achievements": all_achievements, "new": newly_awarded}
 
 
 # Serve frontend static files (production)
