@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { completePomodoroSession } from '$lib/api';
+	import { formatTime } from '$lib/format';
 	import { Play, Pause, ArrowCounterClockwise } from 'phosphor-svelte';
 	import { tap, success } from '$lib/haptics';
 
@@ -113,13 +114,6 @@
 		state = resetTimer();
 		remainingMs = 0;
 		scheduleNotification(state);
-	}
-
-	function formatTime(ms: number): string {
-		const totalSec = Math.ceil(ms / 1000);
-		const m = Math.floor(totalSec / 60);
-		const s = totalSec % 60;
-		return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 	}
 
 	function displayTime(): string {

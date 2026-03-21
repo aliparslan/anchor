@@ -8,23 +8,19 @@
 		fetchRssItems, refreshRss,
 		type HnPost, type YoutubeVideo, type RssItem, type ReadingQueueItem
 	} from '$lib/api';
-	import { timeAgo } from '$lib/utils';
+	import { timeAgo, localDate } from '$lib/utils';
 	import { isWatched, markWatched, isHnRead, markHnRead } from '$lib/watched';
-	import { theme, toggleTheme } from '$lib/theme';
 	import { getCached, setCached, clearCached } from '$lib/cache';
 	import { onDestroy } from 'svelte';
 	import VideoPlayer from '$lib/components/VideoPlayer.svelte';
 	import { Moon, Sun, ArrowClockwise, BookmarkSimple, X, Check, Eye, EyeSlash } from 'phosphor-svelte';
-	import { getScore, onScoreChange } from '$lib/score';
-	import type { DailyScore } from '$lib/api';
-
-	let dailyScore = $state<DailyScore | null>(getScore());
-	$effect(() => { return onScoreChange((s) => dailyScore = s); });
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import SectionHeader from '$lib/components/SectionHeader.svelte';
 
 	// YouTube daily batching: persist reveal count per day in localStorage
 	function getYtRevealCount(): number {
 		try {
-			const today = new Date().toISOString().split('T')[0];
+			const today = localDate();
 			const storedDate = localStorage.getItem('yt_reveal_date');
 			const stored = localStorage.getItem('yt_reveal_count');
 			if (storedDate === today && stored) return parseInt(stored, 10);
@@ -35,7 +31,7 @@
 	function saveYtRevealCount(count: number) {
 		try {
 			localStorage.setItem('yt_reveal_count', String(count));
-			localStorage.setItem('yt_reveal_date', new Date().toISOString().split('T')[0]);
+			localStorage.setItem('yt_reveal_date', localDate());
 		} catch {}
 	}
 
@@ -45,6 +41,7 @@
 	let hnPosts = $state<HnPost[]>(_c?.hnPosts ?? []);
 	let ytVideos = $state<YoutubeVideo[]>(_c?.ytVideos ?? []);
 	let loading = $state(!_c);
+	let fetchError = $state(false);
 	let activeVideoId = $state('');
 	let watchedSet = $state<Set<string>>(_c?.watchedSet ?? new Set());
 	let dismissedSet = $state<Set<string>>(_c?.dismissedSet ?? new Set());
@@ -207,7 +204,7 @@
 						.map((q: any) => q.hn_id as number)
 				);
 			})
-			.catch((err) => console.warn('[Feed] fetch error:', err))
+			.catch((err) => { console.warn('[Feed] fetch error:', err); fetchError = true; })
 			.finally(() => {
 				loading = false;
 			});
@@ -241,29 +238,10 @@
 </script>
 
 <div>
-	<div class="page-header">
-		<h1 class="greeting">Feed</h1>
-		<div class="page-header-actions">
-			{#if dailyScore !== null}
-				<div class="score-ring" title="{dailyScore.score}/100">
-					<svg viewBox="0 0 36 36" class="score-ring-svg">
-						<circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--border)" stroke-width="3" />
-						<circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--accent)" stroke-width="3"
-							stroke-dasharray="{dailyScore.score * 0.9749} {97.49 - dailyScore.score * 0.9749}"
-							stroke-dashoffset="0" stroke-linecap="round" />
-					</svg>
-					<span class="score-ring-text">{dailyScore.score}</span>
-				</div>
-			{/if}
-			<button class="theme-toggle" onclick={toggleTheme} aria-label="Toggle theme">
-				{#if $theme === 'light'}
-					<Moon size={18} weight="duotone" />
-				{:else}
-					<Sun size={18} weight="duotone" />
-				{/if}
-			</button>
-		</div>
-	</div>
+	{#if fetchError}
+		<p class="fetch-error">Couldn't load feed</p>
+	{/if}
+	<PageHeader title="Feed" />
 
 	{#if loading}
 		<!-- Skeleton: HN -->
@@ -305,8 +283,7 @@
 	{:else}
 		<!-- Hacker News -->
 		<div class="home-section section-hn">
-			<div class="section-header">
-				<span class="section-title">Hacker News</span>
+			<SectionHeader title="Hacker News">
 				<div class="section-actions">
 					{#if hnPosts.length > 0}
 						<span class="section-updated">{timeAgo(hnPosts[0]?.fetched_at)}</span>
@@ -317,7 +294,7 @@
 						</span>
 					</button>
 				</div>
-			</div>
+			</SectionHeader>
 			{#if hnPosts.length === 0}
 				<div class="empty">No posts yet. Refresh to fetch.</div>
 			{:else}
@@ -355,8 +332,7 @@
 
 		<!-- YouTube (daily batching) -->
 		<div class="home-section section-yt">
-			<div class="section-header">
-				<span class="section-title">YouTube</span>
+			<SectionHeader title="YouTube">
 				<div class="section-actions">
 					{#if ytVideos.length > 0}
 						<span class="section-updated">{timeAgo(ytVideos[0]?.fetched_at)}</span>
@@ -371,7 +347,7 @@
 						</button>
 					{/if}
 				</div>
-			</div>
+			</SectionHeader>
 			{#if visibleVideos.length === 0 && !canRevealMoreYt}
 				<div class="empty">All caught up for today.</div>
 			{:else if visibleVideos.length === 0}
@@ -416,8 +392,7 @@
 
 		<!-- Articles (RSS) -->
 		<div class="home-section">
-			<div class="section-header">
-				<span class="section-title">Articles</span>
+			<SectionHeader title="Articles">
 				<div class="section-actions">
 					<button class="refresh-btn" onclick={handleRssRefresh} disabled={rssRefreshing}>
 						<span class:spinner={rssRefreshing}>
@@ -425,7 +400,7 @@
 						</span>
 					</button>
 				</div>
-			</div>
+			</SectionHeader>
 			{#if rssItems.length === 0}
 				<div class="empty">No articles yet. Feeds update every 12 hours.</div>
 			{:else}
@@ -463,8 +438,7 @@
 		<!-- Reading Queue -->
 		{#if queue.length > 0}
 			<div class="home-section">
-				<div class="section-header">
-					<span class="section-title">Queue</span>
+				<SectionHeader title="Queue">
 					<div class="section-actions">
 						<div class="queue-filters">
 							<button class="queue-filter" class:queue-filter-active={queueFilter === 'unread'} onclick={() => queueFilter = 'unread'}>
@@ -478,7 +452,7 @@
 							</button>
 						</div>
 					</div>
-				</div>
+				</SectionHeader>
 				{#if filteredQueue.length === 0}
 					<div class="empty">{queueFilter === 'unread' ? 'All caught up' : 'No read articles yet'}</div>
 				{:else}

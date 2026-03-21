@@ -5,13 +5,10 @@
 		type SystemStatus, type ClaudeStatus, type TailscaleStatus
 	} from '$lib/api';
 	import { getCached, setCached } from '$lib/cache';
-	import { theme, toggleTheme } from '$lib/theme';
-	import { Desktop, Robot, Globe, Moon, Sun, Circle } from 'phosphor-svelte';
-	import { getScore, onScoreChange } from '$lib/score';
-	import type { DailyScore } from '$lib/api';
-
-	let dailyScore = $state<DailyScore | null>(getScore());
-	$effect(() => { return onScoreChange((s) => dailyScore = s); });
+	import { Desktop, Robot, Globe, Circle } from 'phosphor-svelte';
+	import PageHeader from '$lib/components/PageHeader.svelte';
+	import SectionHeader from '$lib/components/SectionHeader.svelte';
+	import { formatTokens } from '$lib/format';
 	import { onDestroy } from 'svelte';
 
 	const _c = getCached<any>('status');
@@ -23,12 +20,6 @@
 	onDestroy(() => {
 		setCached('status', { system, claude, tailscale, dashboardAge });
 	});
-
-	function formatTokens(n: number): string {
-		if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-		if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-		return String(n);
-	}
 
 	async function refresh() {
 		const [s, c, t, age] = await Promise.all([
@@ -50,35 +41,11 @@
 	});
 </script>
 
-<div class="page-header">
-	<h1 class="greeting">Status</h1>
-	<div class="page-header-actions">
-		{#if dailyScore !== null}
-			<div class="score-ring" title="{dailyScore.score}/100">
-				<svg viewBox="0 0 36 36" class="score-ring-svg">
-					<circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--border)" stroke-width="3" />
-					<circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--accent)" stroke-width="3"
-						stroke-dasharray="{dailyScore.score * 0.9749} {97.49 - dailyScore.score * 0.9749}"
-						stroke-dashoffset="0" stroke-linecap="round" />
-				</svg>
-				<span class="score-ring-text">{dailyScore.score}</span>
-			</div>
-		{/if}
-		<button class="theme-toggle" onclick={toggleTheme} aria-label="Toggle theme">
-			{#if $theme === 'light'}
-				<Moon size={18} weight="duotone" />
-			{:else}
-				<Sun size={18} weight="duotone" />
-			{/if}
-		</button>
-	</div>
-</div>
+<PageHeader title="Status" />
 
 <!-- System -->
 <div class="home-section">
-	<div class="section-header">
-		<span class="section-title">System</span>
-	</div>
+	<SectionHeader title="System" />
 	{#if system}
 		<div class="status-card">
 			<div class="status-card-header">
@@ -117,9 +84,7 @@
 
 <!-- Claude -->
 <div class="home-section">
-	<div class="section-header">
-		<span class="section-title">Claude</span>
-	</div>
+	<SectionHeader title="Claude" />
 	{#if claude?.available}
 		<div class="status-card">
 			<div class="status-card-header">
@@ -159,9 +124,7 @@
 
 <!-- Tailscale -->
 <div class="home-section">
-	<div class="section-header">
-		<span class="section-title">Network</span>
-	</div>
+	<SectionHeader title="Network" />
 	{#if tailscale?.available}
 		<div class="status-card">
 			<div class="status-card-header">
