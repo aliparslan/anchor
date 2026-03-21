@@ -77,6 +77,15 @@ export async function saveJournal(date: string, content: string): Promise<Journa
 	return data.entry;
 }
 
+export async function appendJournalToday(text: string): Promise<JournalEntry> {
+	const data = await apiFetch<{ entry: JournalEntry }>(`${BASE}/api/journal/today/append`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ content: text })
+	});
+	return data.entry;
+}
+
 export async function fetchJournalDates(): Promise<string[]> {
 	const data = await apiFetch<{ dates: string[] }>(`${BASE}/api/journal/dates`);
 	return data.dates;
