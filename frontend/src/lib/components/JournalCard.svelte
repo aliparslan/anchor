@@ -262,7 +262,7 @@
 		</div>
 		<span class="jrnl-wordcount">{wordCount} {wordCount === 1 ? 'word' : 'words'}</span>
 		<button class="jrnl-entries-toggle" onclick={toggleAllEntries}>
-			{showAllEntries ? 'Hide' : `${totalEntries} entries`}
+			{showAllEntries ? 'Hide' : `${totalEntries} ${totalEntries === 1 ? 'entry' : 'entries'}`}
 		</button>
 	</div>
 
