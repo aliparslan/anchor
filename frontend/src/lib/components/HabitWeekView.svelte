@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { HabitsWeek } from '$lib/api';
+  import { localDate } from '$lib/utils';
 
   let { data = null }: { data: HabitsWeek | null } = $props();
 
@@ -21,7 +22,7 @@
     return ['S', 'M', 'T', 'W', 'T', 'F', 'S'][d.getDay()];
   }
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDate();
 
   let expanded = $state(false);
 

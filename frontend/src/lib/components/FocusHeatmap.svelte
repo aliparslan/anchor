@@ -1,5 +1,6 @@
 <script lang="ts">
   import { fetchFocusMonth, type FocusDay } from '$lib/api';
+  import { localDate } from '$lib/utils';
 
   let data = $state<FocusDay[]>([]);
 
@@ -15,7 +16,7 @@
     for (let i = 29; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      const iso = d.toISOString().split('T')[0];
+      const iso = localDate(d);
       days.push({ date: iso, minutes: lookup.get(iso) || 0 });
     }
     return days;
