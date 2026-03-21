@@ -170,6 +170,12 @@ async def init_db():
             CREATE INDEX IF NOT EXISTS idx_pomodoro_date ON pomodoro_sessions(date);
             CREATE INDEX IF NOT EXISTS idx_rss_published ON rss_items(published_at DESC);
             CREATE INDEX IF NOT EXISTS idx_capture_archived ON quick_capture(archived_at);
+            CREATE INDEX IF NOT EXISTS idx_habit_completions_date ON habit_completions(date);
+            CREATE INDEX IF NOT EXISTS idx_sleep_log_date ON sleep_log(date);
+            CREATE INDEX IF NOT EXISTS idx_workout_log_date ON workout_log(date);
+            CREATE INDEX IF NOT EXISTS idx_mood_log_date ON mood_log(date);
+            CREATE INDEX IF NOT EXISTS idx_journal_entries_date ON journal_entries(date);
+            CREATE INDEX IF NOT EXISTS idx_daily_mit_date ON daily_mit(date);
         """)
         await db.commit()
     finally:
@@ -750,57 +756,6 @@ async def save_mood(entry_date: str, mood: int) -> dict:
         )
         await db.commit()
         return {"date": entry_date, "mood": mood, "updated_at": now}
-    finally:
-        await db.close()
-
-
-# --- Quick Capture ---
-
-
-async def get_captures() -> list[dict]:
-    db = await get_db()
-    try:
-        cursor = await db.execute(
-            "SELECT * FROM quick_capture WHERE archived_at IS NULL ORDER BY created_at DESC"
-        )
-        rows = await cursor.fetchall()
-        return [dict(row) for row in rows]
-    finally:
-        await db.close()
-
-
-async def save_capture(text: str) -> dict:
-    now = datetime.now(timezone.utc).isoformat()
-    db = await get_db()
-    try:
-        cursor = await db.execute(
-            "INSERT INTO quick_capture (text, created_at) VALUES (?, ?)",
-            (text, now),
-        )
-        await db.commit()
-        item_id = cursor.lastrowid
-        return {"id": item_id, "text": text, "created_at": now, "archived_at": None}
-    finally:
-        await db.close()
-
-
-async def archive_capture(capture_id: int):
-    now = datetime.now(timezone.utc).isoformat()
-    db = await get_db()
-    try:
-        await db.execute(
-            "UPDATE quick_capture SET archived_at = ? WHERE id = ?", (now, capture_id)
-        )
-        await db.commit()
-    finally:
-        await db.close()
-
-
-async def delete_capture(capture_id: int):
-    db = await get_db()
-    try:
-        await db.execute("DELETE FROM quick_capture WHERE id = ?", (capture_id,))
-        await db.commit()
     finally:
         await db.close()
 
@@ -1411,7 +1366,7 @@ async def get_weekly_review(today: str) -> dict:
                     bt = datetime.strptime(sr["bedtime"], "%H:%M")
                     wt = datetime.strptime(sr["wake_time"], "%H:%M")
                     diff = (wt - bt).total_seconds() / 3600
-                    if diff <= 0:
+                    if diff < 0:
                         diff += 24  # crossed midnight
                     total_hours += diff
                     valid_count += 1
@@ -1554,19 +1509,13 @@ async def search_all(query: str, limit: int = 20) -> dict:
     db = await get_db()
     q = f"%{query}%"
     try:
-        results = {"journal": [], "captures": [], "queue": [], "rss": []}
+        results = {"journal": [], "queue": [], "rss": []}
         # Journal
         cur = await db.execute(
             "SELECT date, content FROM journal_entries WHERE content LIKE ? ORDER BY date DESC LIMIT ?",
             (q, limit),
         )
         results["journal"] = [dict(r) for r in await cur.fetchall()]
-        # Captures
-        cur = await db.execute(
-            "SELECT id, text, created_at FROM quick_capture WHERE text LIKE ? AND archived_at IS NULL ORDER BY created_at DESC LIMIT ?",
-            (q, limit),
-        )
-        results["captures"] = [dict(r) for r in await cur.fetchall()]
         # Reading queue
         cur = await db.execute(
             "SELECT id, title, url, domain FROM reading_queue WHERE title LIKE ? ORDER BY saved_at DESC LIMIT ?",
@@ -1649,12 +1598,10 @@ async def check_achievements(today_str: str) -> list[dict]:
             if await award_achievement("50_saved", "Saved 50 articles to reading queue"):
                 newly_awarded.append({"name": "50_saved", "description": "Saved 50 articles to reading queue"})
 
-        # Inbox zero
+        # Inbox zero (all saved articles read)
         cur = await db.execute("SELECT COUNT(*) as c FROM reading_queue WHERE read_at IS NULL")
         unread = (await cur.fetchone())["c"]
-        cur2 = await db.execute("SELECT COUNT(*) as c FROM quick_capture WHERE archived_at IS NULL")
-        uncaptured = (await cur2.fetchone())["c"]
-        if total_saved > 0 and unread == 0 and uncaptured == 0:
+        if total_saved > 0 and unread == 0:
             if await award_achievement("inbox_zero", "Achieved inbox zero"):
                 newly_awarded.append({"name": "inbox_zero", "description": "Achieved inbox zero"})
 
