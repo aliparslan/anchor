@@ -178,12 +178,20 @@
 		return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 	}
 
+	async function refreshDates() {
+		try {
+			const dates = await fetchJournalDates();
+			totalEntries = dates.length;
+			entryDatesSet = new Set(dates);
+		} catch {}
+	}
+
 	function handleInput() {
 		if (saveTimeout) clearTimeout(saveTimeout);
 		saveTimeout = setTimeout(async () => {
 			try {
 				await saveJournal(currentDate, content);
-				entryDatesSet = new Set([...entryDatesSet, currentDate]);
+				await refreshDates();
 				savedIndicator = true;
 				if (indicatorTimeout) clearTimeout(indicatorTimeout);
 				indicatorTimeout = setTimeout(() => {
@@ -199,19 +207,16 @@
 		window.removeEventListener('journal-updated', handleJournalUpdated);
 	});
 
-	function handleJournalUpdated() {
+	async function handleJournalUpdated() {
 		if (currentDate === localDate()) {
-			loadEntry();
+			await loadEntry();
 		}
+		await refreshDates();
 	}
 
 	onMount(async () => {
 		await loadEntry();
-		try {
-			const dates = await fetchJournalDates();
-			totalEntries = dates.length;
-			entryDatesSet = new Set(dates);
-		} catch {}
+		await refreshDates();
 		window.addEventListener('journal-updated', handleJournalUpdated);
 	});
 </script>
