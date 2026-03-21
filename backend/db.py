@@ -269,6 +269,19 @@ async def get_journal_dates() -> list[str]:
         await db.close()
 
 
+async def get_journal_entries_preview(limit: int = 20, offset: int = 0) -> list[dict]:
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            "SELECT date, SUBSTR(content, 1, 80) as preview FROM journal_entries WHERE content != '' ORDER BY date DESC LIMIT ? OFFSET ?",
+            (limit, offset),
+        )
+        rows = await cursor.fetchall()
+        return [{"date": row["date"], "preview": row["preview"]} for row in rows]
+    finally:
+        await db.close()
+
+
 async def get_journal_entry(entry_date: str) -> dict | None:
     db = await get_db()
     try:

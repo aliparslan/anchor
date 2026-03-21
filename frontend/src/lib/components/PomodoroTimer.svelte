@@ -11,10 +11,18 @@
 		}
 	}
 
-	function notify(title: string, body: string) {
-		if ('Notification' in window && Notification.permission === 'granted') {
-			new Notification(title, { body, icon: '/icon-192.png' });
-		}
+	async function notify(title: string, body: string) {
+		if (!('serviceWorker' in navigator)) return;
+		try {
+			const reg = await navigator.serviceWorker.ready;
+			await reg.showNotification(title, {
+				body,
+				icon: '/icon-192.png',
+				badge: '/icon-192.png',
+				tag: 'anchor-timer',
+				vibrate: [200, 100, 200]
+			});
+		} catch {}
 	}
 	import {
 		loadState,
@@ -27,6 +35,10 @@
 		resumeTimer,
 		completeSegment,
 		resetTimer,
+		scheduleNotification,
+		markNotified,
+		wasNotified,
+		getSessionId,
 		DURATIONS,
 		type PomodoroState
 	} from '$lib/timer';
@@ -59,14 +71,20 @@
 	async function handleComplete() {
 		if (completing) return;
 		completing = true;
+		scheduleNotification({ ...state, startedAt: null });
+		const sid = getSessionId(state);
 		try {
 			if (state.status === 'working') {
 				const data = await completePomodoroSession();
 				totalMinutesToday = data.total_minutes;
-				const done = state.pomodorosCompleted + 1;
-				notify('Focus complete', done >= 4 ? 'Long break time.' : 'Take a short break.');
-			} else {
+				if (!wasNotified(sid)) {
+					const done = state.pomodorosCompleted + 1;
+					notify('Focus complete', done >= 4 ? 'Long break time.' : 'Take a short break.');
+					markNotified(sid);
+				}
+			} else if (!wasNotified(sid)) {
 				notify('Break over', '');
+				markNotified(sid);
 			}
 			state = completeSegment(state);
 			remainingMs = 0;
@@ -88,11 +106,13 @@
 			state = startTimer(state);
 		}
 		remainingMs = getRemainingMs(state);
+		scheduleNotification(state);
 	}
 
 	function handleReset() {
 		state = resetTimer();
 		remainingMs = 0;
+		scheduleNotification(state);
 	}
 
 	function formatTime(ms: number): string {
@@ -122,6 +142,8 @@
 		remainingMs = getRemainingMs(state);
 		if (isComplete(state)) {
 			handleComplete();
+		} else if (isRunning(state)) {
+			scheduleNotification(state);
 		}
 	});
 

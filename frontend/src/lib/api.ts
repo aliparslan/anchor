@@ -81,6 +81,11 @@ export async function fetchJournalDates(): Promise<string[]> {
 	const data = await apiFetch<{ dates: string[] }>(`${BASE}/api/journal/dates`);
 	return data.dates;
 }
+export interface JournalPreview { date: string; preview: string; }
+export async function fetchJournalEntries(limit = 20, offset = 0): Promise<JournalPreview[]> {
+	const data = await apiFetch<{ entries: JournalPreview[] }>(`${BASE}/api/journal/entries?limit=${limit}&offset=${offset}`);
+	return data.entries;
+}
 
 export async function fetchPomodoroToday(): Promise<{ sessions: PomodoroSession[]; total_minutes: number }> {
 	return apiFetch(`${BASE}/api/pomodoro/today`);
