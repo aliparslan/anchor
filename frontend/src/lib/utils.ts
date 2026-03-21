@@ -1,3 +1,8 @@
+/** Local date string (YYYY-MM-DD) — avoids the UTC rollover bug in toISOString() */
+export function localDate(d: Date = new Date()): string {
+	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export function timeAgo(isoStr: string): string {
 	if (!isoStr) return '';
 	const diff = Date.now() - new Date(isoStr).getTime();
