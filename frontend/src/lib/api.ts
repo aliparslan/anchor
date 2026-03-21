@@ -225,13 +225,6 @@ export interface MoodLog {
 	updated_at: string;
 }
 
-export interface Capture {
-	id: number;
-	text: string;
-	created_at: string;
-	archived_at: string | null;
-}
-
 export interface DaySummary {
 	mit: { text: string; completed: number } | null;
 	focus_minutes: number;
@@ -371,30 +364,6 @@ export async function saveMood(mood: number): Promise<MoodLog> {
 		body: JSON.stringify({ mood })
 	});
 	return data.mood;
-}
-
-// --- Quick Capture ---
-
-export async function fetchCaptures(): Promise<Capture[]> {
-	const data = await apiFetch<{ captures: Capture[] }>(`${BASE}/api/captures`);
-	return data.captures;
-}
-
-export async function saveCapture(text: string): Promise<Capture> {
-	const data = await apiFetch<{ capture: Capture }>(`${BASE}/api/captures`, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ text })
-	});
-	return data.capture;
-}
-
-export async function archiveCapture(id: number): Promise<void> {
-	await apiFetch(`${BASE}/api/captures/${id}/archive`, { method: 'POST' });
-}
-
-export async function deleteCapture(id: number): Promise<void> {
-	await apiFetch(`${BASE}/api/captures/${id}`, { method: 'DELETE' });
 }
 
 // --- Custom Habits ---
@@ -574,7 +543,6 @@ export async function fetchRandomGratitude(): Promise<GratitudeEntry | null> {
 // --- Search ---
 export interface SearchResults {
 	journal: { date: string; content: string }[];
-	captures: { id: number; text: string; created_at: string }[];
 	queue: { id: number; title: string; url: string; domain: string }[];
 	rss: { id: number; title: string; url: string; feed_name: string }[];
 }

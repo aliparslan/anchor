@@ -49,7 +49,7 @@
 	});
 
 	const totalResults = $derived(
-		results ? results.journal.length + results.captures.length + results.queue.length + results.rss.length : 0
+		results ? results.journal.length + results.queue.length + results.rss.length : 0
 	);
 </script>
 
@@ -90,17 +90,6 @@
 								<div class="search-result">
 									<span class="search-result-meta">{entry.date}</span>
 									<span class="search-result-text">{entry.content.slice(0, 100)}</span>
-								</div>
-							{/each}
-						</div>
-					{/if}
-
-					{#if results.captures.length > 0}
-						<div class="search-group">
-							<span class="search-group-label">Captures</span>
-							{#each results.captures.slice(0, 5) as capture}
-								<div class="search-result">
-									<span class="search-result-text">{capture.text}</span>
 								</div>
 							{/each}
 						</div>

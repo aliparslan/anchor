@@ -10,6 +10,19 @@
 	let pageReady = $state(true);
 	let showSearch = $state(false);
 	let captureOpen = $state(false);
+	let online = $state(true);
+
+	$effect(() => {
+		online = navigator.onLine;
+		const on = () => online = true;
+		const off = () => online = false;
+		window.addEventListener('online', on);
+		window.addEventListener('offline', off);
+		return () => {
+			window.removeEventListener('online', on);
+			window.removeEventListener('offline', off);
+		};
+	});
 
 	function handleGlobalKeydown(e: KeyboardEvent) {
 		if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -37,6 +50,10 @@
 <svelte:window onkeydown={handleGlobalKeydown} />
 
 <SearchOverlay bind:open={showSearch} />
+
+{#if !online}
+	<div class="offline-bar">offline</div>
+{/if}
 
 <div class="app" class:page-enter={pageReady}>
 	{@render children()}

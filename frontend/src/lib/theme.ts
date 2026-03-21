@@ -6,6 +6,8 @@ const themeStore = writable<Theme>('light');
 
 export const theme = { subscribe: themeStore.subscribe };
 
+let themeInitialized = false;
+
 export function initTheme() {
 	if (typeof window === 'undefined') return;
 	const saved = localStorage.getItem('theme');
@@ -17,12 +19,15 @@ export function initTheme() {
 	document.documentElement.setAttribute('data-theme', value);
 
 	// Listen for system theme changes (only if user hasn't set a preference)
-	window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-		if (localStorage.getItem('theme')) return; // user has explicit preference
-		const next: Theme = e.matches ? 'dark' : 'light';
-		themeStore.set(next);
-		document.documentElement.setAttribute('data-theme', next);
-	});
+	if (!themeInitialized) {
+		themeInitialized = true;
+		window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+			if (localStorage.getItem('theme')) return;
+			const next: Theme = e.matches ? 'dark' : 'light';
+			themeStore.set(next);
+			document.documentElement.setAttribute('data-theme', next);
+		});
+	}
 }
 
 export function toggleTheme() {
