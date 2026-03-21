@@ -4,6 +4,10 @@ import { defineConfig } from 'vite';
 export default defineConfig({
 	plugins: [sveltekit()],
 	server: {
+		https: {
+			key: '../backend/cert.key',
+			cert: '../backend/cert.crt'
+		},
 		proxy: {
 			'/api': {
 				target: 'https://localhost:8443',

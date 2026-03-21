@@ -902,87 +902,359 @@ a:hover {
 	text-align: center;
 }
 
-/* Journal card */
-.journal-card {
-	margin-bottom: var(--space-section);
-	padding: 16px;
-	border-radius: 10px;
+/* Journal — calm & minimal with dot calendar */
+.jrnl-card {
+	border-radius: 12px;
 	background: var(--card-bg);
 	border: 1px solid var(--border);
-}
-
-.journal-header {
+	padding: 0;
+	box-shadow:
+		0 1px 2px rgba(0, 0, 0, 0.06),
+		0 4px 12px rgba(0, 0, 0, 0.04);
 	display: flex;
-	align-items: center;
-	gap: 12px;
-	margin-bottom: 12px;
+	flex-direction: column;
+	margin-bottom: var(--space-section);
+	position: relative;
 }
 
-.journal-header .section-title {
-	font-size: 13px;
-	text-transform: none;
-	letter-spacing: normal;
-	color: var(--text);
+[data-theme='dark'] .jrnl-card {
+	box-shadow:
+		0 1px 2px rgba(0, 0, 0, 0.2),
+		0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.journal-nav {
-	display: flex;
-	align-items: center;
-	gap: 4px;
+/* Hidden native date picker — positioned under the date label so iOS opens it there */
+.jrnl-date-input-hidden {
+	position: absolute;
+	top: 14px;
+	left: 50%;
+	transform: translateX(-50%);
+	opacity: 0;
+	width: 1px;
+	height: 1px;
+	border: none;
+	pointer-events: none;
 }
 
-.journal-nav-btn {
+/* Header: centered ‹ Today › */
+.jrnl-header {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 24px;
-	height: 24px;
-	border-radius: 4px;
+	gap: 10px;
+	padding: 14px 20px;
+}
+
+.jrnl-nav-arrow {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+	border-radius: 6px;
 	border: none;
 	background: none;
 	color: var(--text-tertiary);
 	cursor: pointer;
-	transition: all 0.15s ease;
+	transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
 }
 
-.journal-nav-btn:hover:not(:disabled) {
+/* Hover persists on iOS after tap — acts as the "active" feedback */
+.jrnl-nav-arrow:hover {
+	background: var(--bg-secondary);
+	color: var(--text);
+}
+
+.jrnl-nav-arrow:disabled {
+	opacity: 0.2;
+	cursor: default;
+}
+
+.jrnl-nav-arrow:disabled:hover {
+	background: none;
+	color: var(--text-tertiary);
+}
+
+[data-theme='dark'] .jrnl-nav-arrow {
+	color: var(--text-tertiary);
+}
+
+[data-theme='dark'] .jrnl-nav-arrow:hover {
 	background: var(--bg-hover);
 	color: var(--text);
 }
 
-.journal-nav-btn:disabled {
-	opacity: 0.3;
-	cursor: not-allowed;
-}
-
-.journal-date {
-	font-size: 13px;
-	color: var(--text-tertiary);
-	min-width: 50px;
-	text-align: center;
-}
-
-.journal-saved {
-	font-size: 12px;
-	color: var(--accent);
-	margin-left: auto;
-}
-
-.journal-textarea {
-	width: 100%;
-	min-height: 100px;
-	border: none;
+/* Date label with inline saved dot */
+.jrnl-date-label {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-family: var(--font-mono);
+	font-size: 10px;
+	font-weight: 500;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--text-secondary);
 	background: none;
+	border: none;
+	padding: 4px 4px;
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+	border-bottom: 1px dashed var(--text-tertiary);
+}
+
+[data-theme='dark'] .jrnl-date-label {
+	color: var(--text);
+}
+
+.jrnl-saved-dot {
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	background: var(--color-green);
+	flex-shrink: 0;
+}
+
+/* Textarea with ruled lines */
+.jrnl-body {
+	padding: 0 20px;
+}
+
+.jrnl-textarea {
+	width: 100%;
+	height: 160px;
+	border: none;
 	color: var(--text);
 	font-family: var(--font-sans);
 	font-size: 14px;
-	line-height: 1.6;
+	line-height: 32px;
 	resize: none;
 	outline: none;
+	padding: 0;
+	padding-bottom: 8px;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+	background-color: var(--card-bg);
+	background-image:
+		repeating-linear-gradient(
+			to bottom,
+			transparent 0px,
+			transparent 25px,
+			var(--border) 25px,
+			var(--border) 26px,
+			transparent 26px,
+			transparent 32px
+		);
+	background-attachment: local;
 }
 
-.journal-textarea::placeholder {
+[data-theme='dark'] .jrnl-textarea {
+	color: #e8e6e1;
+	background-color: var(--card-bg);
+	background-image:
+		repeating-linear-gradient(
+			to bottom,
+			transparent 0px,
+			transparent 25px,
+			rgba(255, 255, 255, 0.1) 25px,
+			rgba(255, 255, 255, 0.1) 26px,
+			transparent 26px,
+			transparent 32px
+		);
+}
+
+.jrnl-textarea::placeholder {
 	color: var(--text-tertiary);
+	font-style: italic;
+}
+
+[data-theme='dark'] .jrnl-textarea::placeholder {
+	color: #6b6a66;
+}
+
+/* Footer: single row — dots · word count · entries */
+.jrnl-footer {
+	position: relative;
+	padding: 10px 20px;
+	margin-top: 4px;
+	border-top: 1px solid var(--border);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+/* Non-interactive dot indicators */
+.jrnl-dots {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	flex-shrink: 0;
+}
+
+.jrnl-dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.jrnl-dot-filled {
+	background: var(--accent);
+}
+
+.jrnl-dot-empty {
+	background: var(--bg-inset);
+}
+
+[data-theme='dark'] .jrnl-dot-filled {
+	background: var(--text);
+}
+
+.jrnl-dot-selected {
+	width: 9px;
+	height: 9px;
+	background: transparent;
+	border: 2px solid var(--accent);
+}
+
+[data-theme='dark'] .jrnl-dot-selected {
+	border-color: var(--text);
+}
+
+.jrnl-wordcount {
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+	font-family: var(--font-mono);
+	font-size: 10px;
+	color: var(--text-tertiary);
+	pointer-events: none;
+}
+
+.jrnl-entries-toggle {
+	font-family: var(--font-mono);
+	font-size: 10px;
+	color: var(--text-tertiary);
+	background: none;
+	border: none;
+	border-bottom: 1px dashed var(--text-tertiary);
+	cursor: pointer;
+	padding: 0 0 1px;
+	transition: opacity 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.jrnl-entries-toggle:hover {
+	opacity: 0.7;
+}
+
+/* Animated entry drawer */
+.jrnl-entries-drawer {
+	max-height: 0;
+	overflow: hidden;
+	transition: max-height 0.35s ease;
+}
+
+.jrnl-entries-drawer-open {
+	max-height: 280px;
+}
+
+.jrnl-entries-list {
+	max-height: 280px;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+	border-top: 1px solid var(--border);
+}
+
+.jrnl-entry-row {
+	display: flex;
+	align-items: baseline;
+	gap: 12px;
+	padding: 10px 20px;
+	border: none;
+	border-left: 2px solid transparent;
+	background: none;
+	cursor: pointer;
+	text-align: left;
+	transition: background 0.15s ease, border-color 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.jrnl-entry-row + .jrnl-entry-row {
+	border-top: 1px solid var(--border);
+}
+
+.jrnl-entry-row:hover {
+	background: var(--bg-hover);
+}
+
+.jrnl-entry-active {
+	background: var(--bg-hover);
+	border-left-color: var(--accent);
+}
+
+.jrnl-entry-date {
+	font-family: var(--font-mono);
+	font-size: 11px;
+	font-weight: 500;
+	color: var(--text-secondary);
+	white-space: nowrap;
+	flex-shrink: 0;
+	min-width: 50px;
+}
+
+[data-theme='dark'] .jrnl-entry-date {
+	color: var(--text);
+}
+
+.jrnl-entry-preview {
+	font-family: var(--font-sans);
+	font-size: 12px;
+	color: var(--text-tertiary);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	line-height: 1.4;
+}
+
+[data-theme='dark'] .jrnl-entry-preview {
+	color: #9b9a96;
+}
+
+.jrnl-entries-empty {
+	font-family: var(--font-mono);
+	font-size: 11px;
+	color: var(--text-tertiary);
+	text-align: center;
+	padding: 16px 0;
+}
+
+.jrnl-load-more {
+	font-family: var(--font-mono);
+	font-size: 10px;
+	color: var(--text-tertiary);
+	background: none;
+	border: none;
+	border-top: 1px solid var(--border);
+	padding: 10px 20px;
+	cursor: pointer;
+	text-align: center;
+	transition: opacity 0.15s ease;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.jrnl-load-more:hover {
+	opacity: 0.7;
+}
+
+.jrnl-load-more:disabled {
+	opacity: 0.4;
+	cursor: default;
 }
 
 /* Video player overlay */

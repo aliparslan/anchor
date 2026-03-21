@@ -18,12 +18,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from pywebpush import webpush, WebPushException
+from py_vapid import Vapid
 
 from db import (
     init_db,
     get_latest_hn_posts,
     get_latest_youtube_videos,
     get_journal_dates,
+    get_journal_entries_preview,
     get_journal_entry,
     save_journal_entry,
     get_pomodoro_sessions,
@@ -123,7 +125,10 @@ async def send_push_to_all(title: str, body: str):
     if not VAPID_PRIVATE_KEY:
         return
     subs = await get_push_subscriptions()
+    if not subs:
+        return
     payload = json.dumps({"title": title, "body": body})
+    vapid = Vapid.from_pem(VAPID_PRIVATE_KEY.encode())
     loop = asyncio.get_event_loop()
     for sub in subs:
         try:
@@ -133,7 +138,7 @@ async def send_push_to_all(title: str, body: str):
                     "keys": {"p256dh": s["p256dh"], "auth": s["auth"]},
                 },
                 data=payload,
-                vapid_private_key=VAPID_PRIVATE_KEY,
+                vapid_private_key=vapid,
                 vapid_claims={"sub": "mailto:noreply@base.local"},
             ))
         except WebPushException as e:
@@ -286,6 +291,11 @@ async def api_refresh_rss():
 async def api_journal_dates():
     dates = await get_journal_dates()
     return {"dates": dates}
+
+@app.get("/api/journal/entries")
+async def api_journal_entries(limit: int = 20, offset: int = 0):
+    entries = await get_journal_entries_preview(limit=limit, offset=offset)
+    return {"entries": entries}
 
 
 @app.get("/api/journal/today")
@@ -447,6 +457,41 @@ async def api_push_unsubscribe(body: PushSubscriptionBody):
 @app.post("/api/push/test")
 async def api_push_test():
     await send_push_to_all("Base", "Test notification ✦")
+    return {"ok": True}
+
+
+# Timer push notification scheduling
+_timer_task: asyncio.Task | None = None
+
+
+class TimerScheduleBody(BaseModel):
+    fire_at: float  # Unix timestamp in seconds
+    title: str = "Anchor"
+    body: str = "Timer complete!"
+
+
+@app.post("/api/push/schedule-timer")
+async def api_schedule_timer(req: TimerScheduleBody):
+    global _timer_task
+    if _timer_task and not _timer_task.done():
+        _timer_task.cancel()
+
+    async def _fire():
+        delay = max(0, req.fire_at - asyncio.get_event_loop().time() + (req.fire_at - time.time()))
+        delay = max(0, req.fire_at - time.time())
+        await asyncio.sleep(delay)
+        await send_push_to_all(req.title, req.body)
+
+    _timer_task = asyncio.create_task(_fire())
+    return {"ok": True}
+
+
+@app.delete("/api/push/schedule-timer")
+async def api_cancel_timer():
+    global _timer_task
+    if _timer_task and not _timer_task.done():
+        _timer_task.cancel()
+        _timer_task = None
     return {"ok": True}
 
 

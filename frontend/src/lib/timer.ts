@@ -135,3 +135,47 @@ export function resetTimer(): PomodoroState {
 	saveState(state);
 	return state;
 }
+
+const NOTIFIED_KEY = 'anchor:timer_notified';
+
+export function markNotified(sessionId: string): void {
+	localStorage.setItem(NOTIFIED_KEY, sessionId);
+}
+
+export function wasNotified(sessionId: string): boolean {
+	return localStorage.getItem(NOTIFIED_KEY) === sessionId;
+}
+
+export function getSessionId(state: PomodoroState): string {
+	return `${state.status}-${state.pomodorosCompleted}-${state.elapsed}`;
+}
+
+export async function scheduleNotification(state: PomodoroState): Promise<void> {
+	const base = '';
+
+	if (!isRunning(state)) {
+		try { await fetch(`${base}/api/push/schedule-timer`, { method: 'DELETE' }); } catch {}
+		return;
+	}
+
+	const remaining = getRemainingMs(state);
+	if (remaining <= 0) return;
+
+	const isWork = state.status === 'working';
+	const completed = state.pomodorosCompleted + (isWork ? 1 : 0);
+	const fireAt = Date.now() / 1000 + remaining / 1000;
+
+	try {
+		await fetch(`${base}/api/push/schedule-timer`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				fire_at: fireAt,
+				title: isWork ? 'Focus complete' : 'Break over',
+				body: isWork
+					? (completed >= 4 ? 'Long break time.' : 'Take a short break.')
+					: 'Ready for another session.'
+			})
+		});
+	} catch {}
+}
