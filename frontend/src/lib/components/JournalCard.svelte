@@ -3,13 +3,18 @@
 	import { fetchJournal, saveJournal, fetchJournalDates, fetchJournalEntries, type JournalPreview } from '$lib/api';
 	import { CaretLeft, CaretRight } from 'phosphor-svelte';
 
+	/** Local date string (YYYY-MM-DD) — avoids the UTC rollover bug in toISOString() */
+	function localDate(d: Date = new Date()): string {
+		return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+	}
+
 	let content = $state('');
 	let savedIndicator = $state(false);
 	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 	let indicatorTimeout: ReturnType<typeof setTimeout> | null = null;
 	let totalEntries = $state(0);
 	let entryDatesSet = $state<Set<string>>(new Set());
-	let currentDate = $state(new Date().toISOString().split('T')[0]);
+	let currentDate = $state(localDate());
 	let showAllEntries = $state(false);
 	let allEntries = $state<JournalPreview[]>([]);
 	let hasMoreEntries = $state(true);
@@ -18,7 +23,7 @@
 
 	const PAGE_SIZE = 20;
 
-	const isToday = $derived(currentDate === new Date().toISOString().split('T')[0]);
+	const isToday = $derived(currentDate === localDate());
 	const wordCount = $derived(content.trim() ? content.trim().split(/\s+/).length : 0);
 
 	const prompts = [
@@ -74,7 +79,7 @@
 	}
 
 	function getDotDays(): { date: string; hasEntry: boolean; isToday: boolean; isSelected: boolean }[] {
-		const todayStr = new Date().toISOString().split('T')[0];
+		const todayStr = localDate();
 		const today = new Date(todayStr + 'T12:00:00');
 		const selected = new Date(currentDate + 'T12:00:00');
 
@@ -88,7 +93,7 @@
 		for (let i = 0; i < 7; i++) {
 			const d = new Date(start);
 			d.setDate(d.getDate() + i);
-			const iso = d.toISOString().split('T')[0];
+			const iso = localDate(d);
 			days.push({
 				date: iso,
 				hasEntry: entryDatesSet.has(iso),
@@ -104,8 +109,8 @@
 	function navigateDay(offset: number) {
 		const d = new Date(currentDate + 'T12:00:00');
 		d.setDate(d.getDate() + offset);
-		const today = new Date().toISOString().split('T')[0];
-		const iso = d.toISOString().split('T')[0];
+		const today = localDate();
+		const iso = localDate(d);
 		if (iso > today) return;
 		selectDate(iso);
 	}
@@ -121,7 +126,7 @@
 	function handleDatePick(e: Event) {
 		const val = (e.target as HTMLInputElement).value;
 		if (!val) return;
-		const today = new Date().toISOString().split('T')[0];
+		const today = localDate();
 		if (val > today) return;
 		selectDate(val);
 	}
@@ -169,7 +174,7 @@
 	}
 
 	function formatDateLabel(dateStr: string): string {
-		if (dateStr === new Date().toISOString().split('T')[0]) return 'Today';
+		if (dateStr === localDate()) return 'Today';
 		return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
 	}
 
@@ -191,7 +196,14 @@
 	onDestroy(() => {
 		if (saveTimeout) clearTimeout(saveTimeout);
 		if (indicatorTimeout) clearTimeout(indicatorTimeout);
+		window.removeEventListener('journal-updated', handleJournalUpdated);
 	});
+
+	function handleJournalUpdated() {
+		if (currentDate === localDate()) {
+			loadEntry();
+		}
+	}
 
 	onMount(async () => {
 		await loadEntry();
@@ -200,6 +212,7 @@
 			totalEntries = dates.length;
 			entryDatesSet = new Set(dates);
 		} catch {}
+		window.addEventListener('journal-updated', handleJournalUpdated);
 	});
 </script>
 
@@ -209,7 +222,7 @@
 		class="jrnl-date-input-hidden"
 		bind:this={dateInputEl}
 		onchange={handleDatePick}
-		max={new Date().toISOString().split('T')[0]}
+		max={localDate()}
 	/>
 
 	<div class="jrnl-header">

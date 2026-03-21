@@ -143,6 +143,34 @@ a:hover {
 	background: var(--text);
 }
 
+/* Center capture button in nav — styled like nav items */
+.bottom-nav-capture {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+	border: none;
+	background: none;
+	color: var(--text-tertiary);
+	font-family: var(--font-display);
+	font-size: 10px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: color 0.15s ease;
+	min-height: 44px;
+	padding: 4px 8px;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.bottom-nav-capture:hover {
+	color: var(--text);
+}
+
+.bottom-nav-capture:active {
+	color: var(--text);
+}
+
 /* Habits page */
 .habits-date {
 	font-family: var(--font-display);
@@ -1255,6 +1283,57 @@ a:hover {
 .jrnl-load-more:disabled {
 	opacity: 0.4;
 	cursor: default;
+}
+
+/* Queue filters & actions (Feed page) */
+.queue-filters {
+	display: flex;
+	gap: 4px;
+}
+
+.queue-filter {
+	padding: 3px 8px;
+	border-radius: 10px;
+	border: none;
+	background: var(--bg-secondary);
+	color: var(--text-tertiary);
+	font-family: var(--font-mono);
+	font-size: 10px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.queue-filter-active {
+	background: var(--text);
+	color: var(--bg);
+}
+
+.queue-actions {
+	display: flex;
+	gap: 2px;
+	flex-shrink: 0;
+}
+
+.queue-action-btn {
+	width: 28px;
+	height: 28px;
+	border-radius: 6px;
+	border: none;
+	background: none;
+	color: var(--text-tertiary);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.15s ease;
+	padding: 0;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.queue-action-btn:hover {
+	background: var(--bg-hover);
+	color: var(--text);
 }
 
 /* Video player overlay */

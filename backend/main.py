@@ -25,6 +25,7 @@ from db import (
     get_latest_hn_posts,
     get_latest_youtube_videos,
     get_journal_dates,
+    append_journal_entry,
     get_journal_entries_preview,
     get_journal_entry,
     save_journal_entry,
@@ -329,6 +330,13 @@ async def api_save_journal(entry_date: str, body: JournalBody):
     except ValueError:
         raise HTTPException(status_code=422, detail="Invalid date format")
     entry = await save_journal_entry(entry_date, body.content)
+    return {"entry": entry}
+
+
+@app.post("/api/journal/today/append")
+async def api_append_journal_today(body: JournalBody):
+    today = date.today().isoformat()
+    entry = await append_journal_entry(today, body.content)
     return {"entry": entry}
 
 

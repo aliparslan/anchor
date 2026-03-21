@@ -4,8 +4,9 @@
 		refreshHn,
 		fetchDismissedVideoIds, dismissVideoServer,
 		saveToReadingQueue, deleteQueueItemByHnId, deleteQueueItem, fetchReadingQueue,
+		markQueueItemRead, markQueueItemUnread,
 		fetchRssItems, refreshRss,
-		type HnPost, type YoutubeVideo, type RssItem
+		type HnPost, type YoutubeVideo, type RssItem, type ReadingQueueItem
 	} from '$lib/api';
 	import { timeAgo } from '$lib/utils';
 	import { isWatched, markWatched, isHnRead, markHnRead } from '$lib/watched';
@@ -13,7 +14,7 @@
 	import { getCached, setCached, clearCached } from '$lib/cache';
 	import { onDestroy } from 'svelte';
 	import VideoPlayer from '$lib/components/VideoPlayer.svelte';
-	import { Moon, Sun, ArrowClockwise, BookmarkSimple, X, Check } from 'phosphor-svelte';
+	import { Moon, Sun, ArrowClockwise, BookmarkSimple, X, Check, Eye, EyeSlash } from 'phosphor-svelte';
 	import { getScore, onScoreChange } from '$lib/score';
 	import type { DailyScore } from '$lib/api';
 
@@ -59,6 +60,11 @@
 	let dismissedRssIds = $state<Set<number>>(new Set(_c?.dismissedRssIds ? [..._c.dismissedRssIds] : []));
 	let readRssUrls = $state<Set<string>>(_c?.readRssUrls ?? new Set());
 
+	// Reading queue
+	let queue = $state<ReadingQueueItem[]>(_c?.queue ?? []);
+	let queueFilter = $state<'all' | 'unread' | 'read'>('unread');
+	let queueExpanded = $state(false);
+
 	function handleRssClick(url: string) {
 		readRssUrls = new Set([...readRssUrls, url]);
 	}
@@ -93,8 +99,7 @@
 			await saveToReadingQueue({ hn_id: post.hn_id, title: post.title, url: post.url || post.hn_url, domain: post.domain });
 			savedHnIds = new Set([...savedHnIds, post.hn_id]);
 		}
-		// Invalidate inbox cache so it re-fetches with updated queue
-		clearCached('inbox');
+		queue = await fetchReadingQueue();
 	}
 
 	function syncState(posts: HnPost[], videos: YoutubeVideo[], dismissed: string[]) {
@@ -117,17 +122,16 @@
 		e.preventDefault();
 		e.stopPropagation();
 		if (savedRssUrls.has(item.url)) {
-			const queue = await fetchReadingQueue();
-			const queueItem = queue.find(q => q.url === item.url);
+			const allQueue = await fetchReadingQueue();
+			const queueItem = allQueue.find(q => q.url === item.url);
 			if (queueItem) await deleteQueueItem(queueItem.id);
 			savedRssUrls = new Set([...savedRssUrls].filter(u => u !== item.url));
-			clearCached('inbox');
 		} else {
 			const domain = new URL(item.url).hostname.replace('www.', '');
 			await saveToReadingQueue({ title: item.title, url: item.url, domain });
 			savedRssUrls = new Set([...savedRssUrls, item.url]);
-			clearCached('inbox');
 		}
+		queue = await fetchReadingQueue();
 	}
 
 	function handleRssDismiss(e: MouseEvent, id: number) {
@@ -143,6 +147,35 @@
 		} finally {
 			rssRefreshing = false;
 		}
+	}
+
+	function getDomain(url: string): string {
+		try { return new URL(url).hostname.replace('www.', ''); } catch { return ''; }
+	}
+
+	async function handleQueueClick(item: ReadingQueueItem) {
+		markQueueItemRead(item.id);
+		window.open(item.url, '_blank');
+		queue = queue.map((q) => q.id === item.id ? { ...q, read_at: new Date().toISOString() } : q);
+	}
+
+	async function handleToggleRead(e: MouseEvent, item: ReadingQueueItem) {
+		e.stopPropagation();
+		e.preventDefault();
+		if (item.read_at) {
+			await markQueueItemUnread(item.id);
+			queue = queue.map((q) => q.id === item.id ? { ...q, read_at: null } : q);
+		} else {
+			await markQueueItemRead(item.id);
+			queue = queue.map((q) => q.id === item.id ? { ...q, read_at: new Date().toISOString() } : q);
+		}
+	}
+
+	async function handleQueueDelete(e: MouseEvent, id: number) {
+		e.stopPropagation();
+		e.preventDefault();
+		await deleteQueueItem(id);
+		queue = queue.filter((q) => q.id !== id);
 	}
 
 	function handleYtRevealMore() {
@@ -166,8 +199,8 @@
 				hnPosts = posts;
 				ytVideos = videos;
 				rssItems = rss;
+				queue = queueItems;
 				syncState(posts, videos, dismissed);
-				// Populate saved HN IDs from reading queue
 				savedHnIds = new Set(
 					queueItems
 						.filter((q: any) => q.hn_id != null)
@@ -185,7 +218,7 @@
 		setCached('feed', {
 			hnPosts, ytVideos, readHnSet, watchedSet, dismissedSet,
 			savedHnIds, ytRevealCount, rssItems, savedRssUrls,
-			dismissedRssIds: [...dismissedRssIds], readRssUrls
+			dismissedRssIds: [...dismissedRssIds], readRssUrls, queue
 		});
 	});
 
@@ -198,6 +231,13 @@
 	const displayedHn = $derived(hnExpanded ? hnPosts.slice(0, 10) : hnPosts.slice(0, 5));
 	const filteredRss = $derived(rssItems.filter(item => !dismissedRssIds.has(item.id)));
 	const displayedRss = $derived(rssExpanded ? filteredRss.slice(0, 20) : filteredRss.slice(0, 10));
+	const filteredQueue = $derived(
+		queueFilter === 'all' ? queue
+		: queueFilter === 'unread' ? queue.filter((q) => !q.read_at)
+		: queue.filter((q) => q.read_at)
+	);
+	const unreadCount = $derived(queue.filter((q) => !q.read_at).length);
+	const readCount = $derived(queue.filter((q) => q.read_at).length);
 </script>
 
 <div>
@@ -420,6 +460,64 @@
 				{/if}
 			{/if}
 		</div>
+		<!-- Reading Queue -->
+		{#if queue.length > 0}
+			<div class="home-section">
+				<div class="section-header">
+					<span class="section-title">Queue</span>
+					<div class="section-actions">
+						<div class="queue-filters">
+							<button class="queue-filter" class:queue-filter-active={queueFilter === 'unread'} onclick={() => queueFilter = 'unread'}>
+								Unread {unreadCount}
+							</button>
+							<button class="queue-filter" class:queue-filter-active={queueFilter === 'read'} onclick={() => queueFilter = 'read'}>
+								Read {readCount}
+							</button>
+							<button class="queue-filter" class:queue-filter-active={queueFilter === 'all'} onclick={() => queueFilter = 'all'}>
+								All
+							</button>
+						</div>
+					</div>
+				</div>
+				{#if filteredQueue.length === 0}
+					<div class="empty">{queueFilter === 'unread' ? 'All caught up' : 'No read articles yet'}</div>
+				{:else}
+					<ul class="hn-list">
+						{#each filteredQueue as item}
+							<li class="hn-item" class:read={item.read_at !== null}>
+								<div class="hn-content">
+									<div class="hn-title">
+										<a href={item.url} target="_blank" rel="noopener" onclick={() => handleQueueClick(item)}>
+											{item.title}
+											{#if item.domain}
+												<span class="hn-domain">({item.domain})</span>
+											{:else}
+												<span class="hn-domain">({getDomain(item.url)})</span>
+											{/if}
+										</a>
+									</div>
+									<div class="hn-meta">
+										<span>saved {timeAgo(item.saved_at)}</span>
+									</div>
+								</div>
+								<div class="queue-actions">
+									<button class="queue-action-btn" onclick={(e) => handleToggleRead(e, item)} aria-label={item.read_at ? 'Mark unread' : 'Mark read'}>
+										{#if item.read_at}
+											<EyeSlash size={14} weight="duotone" />
+										{:else}
+											<Eye size={14} weight="duotone" />
+										{/if}
+									</button>
+									<button class="queue-action-btn" onclick={(e) => handleQueueDelete(e, item.id)} aria-label="Remove">
+										<X size={14} weight="bold" />
+									</button>
+								</div>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</div>
+		{/if}
 	{/if}
 </div>
 

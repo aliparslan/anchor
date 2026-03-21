@@ -294,6 +294,19 @@ async def get_journal_entry(entry_date: str) -> dict | None:
         await db.close()
 
 
+async def append_journal_entry(entry_date: str, text: str) -> dict:
+    """Append a timestamped line to an existing journal entry, or create one."""
+    now = datetime.now()
+    time_label = now.strftime("%-I:%M %p").lower()
+    line = f"[{time_label}] {text}"
+    existing = await get_journal_entry(entry_date)
+    if existing and existing["content"]:
+        content = existing["content"].rstrip() + "\n" + line
+    else:
+        content = line
+    return await save_journal_entry(entry_date, content)
+
+
 async def save_journal_entry(entry_date: str, content: str) -> dict:
     now = datetime.now(timezone.utc).isoformat()
     db = await get_db()
