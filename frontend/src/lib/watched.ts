@@ -1,8 +1,10 @@
 const WATCHED_KEY = 'anchor:watched_videos';
 const READ_HN_KEY = 'anchor:read_hn';
+const READ_RSS_KEY = 'anchor:read_rss';
 
 let watchedCache: Set<string> | null = null;
 let readHnCache: Set<string> | null = null;
+let readRssCache: Set<string> | null = null;
 
 function loadSet(key: string): Set<string> {
 	try {
@@ -37,4 +39,15 @@ export function markHnRead(hnId: string) {
 	if (!readHnCache) readHnCache = loadSet(READ_HN_KEY);
 	readHnCache.add(hnId);
 	saveSet(READ_HN_KEY, readHnCache);
+}
+
+export function isRssRead(url: string): boolean {
+	if (!readRssCache) readRssCache = loadSet(READ_RSS_KEY);
+	return readRssCache.has(url);
+}
+
+export function markRssRead(url: string) {
+	if (!readRssCache) readRssCache = loadSet(READ_RSS_KEY);
+	readRssCache.add(url);
+	saveSet(READ_RSS_KEY, readRssCache);
 }

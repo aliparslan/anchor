@@ -5,11 +5,11 @@
 		fetchDismissedVideoIds, dismissVideoServer,
 		saveToReadingQueue, deleteQueueItemByHnId, deleteQueueItem, fetchReadingQueue,
 		markQueueItemRead, markQueueItemUnread,
-		fetchRssItems, refreshRss,
+		fetchRssItems, refreshRss, dismissRssItem, fetchDismissedRssIds,
 		type HnPost, type YoutubeVideo, type RssItem, type ReadingQueueItem
 	} from '$lib/api';
 	import { timeAgo, localDate } from '$lib/utils';
-	import { isWatched, markWatched, isHnRead, markHnRead } from '$lib/watched';
+	import { isWatched, markWatched, isHnRead, markHnRead, isRssRead, markRssRead } from '$lib/watched';
 	import { getCached, setCached, clearCached } from '$lib/cache';
 	import { onDestroy } from 'svelte';
 	import VideoPlayer from '$lib/components/VideoPlayer.svelte';
@@ -63,6 +63,7 @@
 	let queueExpanded = $state(false);
 
 	function handleRssClick(url: string) {
+		markRssRead(url);
 		readRssUrls = new Set([...readRssUrls, url]);
 	}
 
@@ -103,6 +104,7 @@
 		readHnSet = new Set(posts.filter((p) => isHnRead(String(p.hn_id))).map((p) => String(p.hn_id)));
 		watchedSet = new Set(videos.filter((v) => isWatched(v.video_id)).map((v) => v.video_id));
 		dismissedSet = new Set(dismissed);
+		readRssUrls = new Set(rssItems.filter((item) => isRssRead(item.url)).map((item) => item.url));
 	}
 
 	async function handleHnRefresh() {
@@ -135,12 +137,14 @@
 		e.preventDefault();
 		e.stopPropagation();
 		dismissedRssIds = new Set([...dismissedRssIds, id]);
+		dismissRssItem(id);
 	}
 
 	async function handleRssRefresh() {
 		rssRefreshing = true;
 		try {
 			rssItems = await refreshRss();
+			readRssUrls = new Set(rssItems.filter((item) => isRssRead(item.url)).map((item) => item.url));
 		} finally {
 			rssRefreshing = false;
 		}
@@ -190,13 +194,15 @@
 			fetchYoutubeVideos(),
 			fetchDismissedVideoIds(),
 			fetchReadingQueue(),
-			fetchRssItems()
+			fetchRssItems(),
+			fetchDismissedRssIds()
 		])
-			.then(([posts, videos, dismissed, queueItems, rss]) => {
+			.then(([posts, videos, dismissed, queueItems, rss, dismissedRss]) => {
 				hnPosts = posts;
 				ytVideos = videos;
 				rssItems = rss;
 				queue = queueItems;
+				dismissedRssIds = new Set(dismissedRss);
 				syncState(posts, videos, dismissed);
 				savedHnIds = new Set(
 					queueItems
