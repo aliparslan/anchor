@@ -1,5 +1,6 @@
 <script lang="ts">
   import { fetchDaySummary, type DaySummary } from '$lib/api';
+  import { focusLabel } from '$lib/utils';
   import { Check } from 'phosphor-svelte';
 
   let { open = false, onclose }: { open: boolean; onclose: () => void } = $props();
@@ -19,13 +20,7 @@
     }
   });
 
-  function focusLabel(mins: number): string {
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    if (h === 0) return `${m}m`;
-    if (m === 0) return `${h}h`;
-    return `${h}h ${m}m`;
-  }
+
 </script>
 
 <svelte:window onkeydown={(e) => { if (open && e.key === 'Escape') onclose(); }} />

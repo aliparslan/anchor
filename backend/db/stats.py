@@ -2,6 +2,8 @@ from datetime import datetime, date, timedelta, timezone
 
 from db.base import get_db
 
+FOCUS_GOAL_MINUTES = 240
+
 
 async def get_habits_week(today: str) -> dict:
     today_date = date.fromisoformat(today)
@@ -17,13 +19,13 @@ async def get_habits_week(today: str) -> dict:
             "mood_logged": [],
         }
         for d in dates:
-            # focus: pomodoro total >= 240
+            # focus: pomodoro total >= goal
             cursor = await db.execute(
                 "SELECT COALESCE(SUM(duration_minutes), 0) as total FROM pomodoro_sessions WHERE date = ?",
                 (d,),
             )
             row = await cursor.fetchone()
-            habits["focus"].append(int(row["total"]) >= 240)
+            habits["focus"].append(int(row["total"]) >= FOCUS_GOAL_MINUTES)
 
             # workout
             cursor = await db.execute(
@@ -94,7 +96,7 @@ async def get_streaks(today: str) -> dict[str, int]:
                 row = await cursor.fetchone()
                 done = False
                 if habit_name == "focus":
-                    done = row is not None and int(row["total"]) >= 240
+                    done = row is not None and int(row["total"]) >= FOCUS_GOAL_MINUTES
                 elif habit_name == "workout":
                     done = row is not None and bool(row["completed"])
                 else:
@@ -156,7 +158,7 @@ async def get_daily_summary(today: str) -> dict:
             (today,),
         )
         pom = await cursor.fetchone()
-        focus_done = int(pom["total"]) >= 240
+        focus_done = int(pom["total"]) >= FOCUS_GOAL_MINUTES
 
         cursor = await db.execute(
             "SELECT completed FROM workout_log WHERE date = ?", (today,)
@@ -276,12 +278,12 @@ async def get_streak(today_str: str) -> int:
             mit_row = await mit.fetchone()
             if not mit_row or not mit_row["completed"]:
                 break
-            # Focus >= 240 min
+            # Focus >= goal
             pom = await db.execute(
                 "SELECT COALESCE(SUM(duration_minutes), 0) as total FROM pomodoro_sessions WHERE date = ?", (d,)
             )
             pom_row = await pom.fetchone()
-            if pom_row["total"] < 240:
+            if pom_row["total"] < FOCUS_GOAL_MINUTES:
                 break
             # Journal written
             j = await db.execute("SELECT content FROM journal_entries WHERE date = ?", (d,))
@@ -309,14 +311,14 @@ async def get_daily_score(today_str: str) -> dict:
         breakdown["mit"] = mit_pts
         score += mit_pts
 
-        # Focus: 25 pts (proportional to 240 min)
+        # Focus: 25 pts (proportional to goal)
         pom = await db.execute(
             "SELECT COALESCE(SUM(duration_minutes), 0) as total FROM pomodoro_sessions WHERE date = ?",
             (today_str,),
         )
         pom_row = await pom.fetchone()
         focus_mins = pom_row["total"]
-        focus_pts = min(25, round(focus_mins / 240 * 25))
+        focus_pts = min(25, round(focus_mins / FOCUS_GOAL_MINUTES * 25))
         breakdown["focus"] = focus_pts
         score += focus_pts
 
@@ -324,8 +326,8 @@ async def get_daily_score(today_str: str) -> dict:
         done_habits = 0
         total_habits = 5  # focus, workout, night_routine, sleep_tracked, mood_logged
 
-        # Auto: focus achieved (>= 240 min)
-        if focus_mins >= 240:
+        # Auto: focus achieved (>= goal)
+        if focus_mins >= FOCUS_GOAL_MINUTES:
             done_habits += 1
         # Auto: workout
         wo = await db.execute("SELECT completed FROM workout_log WHERE date = ?", (today_str,))
@@ -402,7 +404,7 @@ async def get_weekly_review(today: str) -> dict:
                 (d,),
             )
             r = await cursor.fetchone()
-            if int(r["total"]) >= 240:
+            if int(r["total"]) >= FOCUS_GOAL_MINUTES:
                 completed_count += 1
 
             cursor = await db.execute(
