@@ -23,6 +23,7 @@ from pywebpush import webpush, WebPushException
 from py_vapid import Vapid
 
 from db import (
+    FOCUS_GOAL_MINUTES,
     init_db,
     get_latest_hn_posts,
     get_latest_youtube_videos,
@@ -400,7 +401,7 @@ async def api_habits_today():
     result = {
         "date": today,
         "focus_minutes": total_minutes,
-        "focus_achieved": total_minutes >= 240,
+        "focus_achieved": total_minutes >= FOCUS_GOAL_MINUTES,
         "workout": workout.get("completed", 0) if workout else 0,
         "night_routine": "night_routine" in completions,
         "sleep_tracked": sleep is not None,
@@ -892,7 +893,7 @@ async def api_reorder_todos(body: TodoReorderBody):
 @app.get("/api/search")
 async def api_search(q: str = ""):
     if not q.strip():
-        return {"results": {"journal": [], "captures": [], "queue": [], "rss": []}}
+        return {"results": {"journal": [], "queue": [], "rss": []}}
     results = await search_all(q.strip())
     return {"results": results}
 

@@ -204,10 +204,13 @@ async def set_water(today_str: str, glasses: int) -> int:
 
 
 async def get_water_week() -> list[dict]:
+    today = date.today()
+    start = (today - timedelta(days=6)).isoformat()
     db = await get_db()
     try:
         cursor = await db.execute(
-            "SELECT date, glasses FROM water_log WHERE date >= date('now', '-6 days') ORDER BY date"
+            "SELECT date, glasses FROM water_log WHERE date >= ? ORDER BY date",
+            (start,),
         )
         rows = await cursor.fetchall()
         return [{"date": r["date"], "glasses": r["glasses"]} for r in rows]
