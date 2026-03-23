@@ -157,24 +157,18 @@
 
 	// Fetch data (skipped if restored from session cache)
 	$effect(() => {
+		// Always fetch preferences (not cached)
+		fetchPreferences().then((prefs) => {
+			userName = prefs.name;
+			pomoDuration = prefs.pomo_duration;
+			focusGoal = prefs.focus_goal;
+		}).catch(() => {});
+
 		if (_c) return;
 		setupPushNotifications();
-		Promise.all([
-			fetchPomodoroToday(),
-			fetchWeather(),
-			fetchPreferences()
-		])
-			.then(([pomodoro, weatherData, prefs]) => {
+		fetchPomodoroToday()
+			.then((pomodoro) => {
 				pomodoroMinutes = pomodoro.total_minutes;
-				if (weatherData.weather) {
-					weather = weatherData.weather;
-					weatherLocation = weatherData.location;
-				}
-				weatherZip = weatherData.zip_code;
-				if (!weatherData.zip_code) showZipInput = true;
-				userName = prefs.name;
-				pomoDuration = prefs.pomo_duration;
-				focusGoal = prefs.focus_goal;
 			})
 			.catch((err) => { console.warn('[Home] fetch error:', err); fetchError = true; })
 			.finally(() => {
@@ -199,93 +193,7 @@
 	{/if}
 	<PageHeader title={getGreeting()} />
 
-	{#if loading && !weather}
-		<div class="weather-line">
-			<span class="skel skel-inline" style="width: 200px"></span>
-		</div>
-	{:else if weather}
-		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-		<div class="weather-line" onclick={toggleForecast} style="cursor: pointer">
-			<span class="weather-icon">
-				{#if weatherIcon === 'sun'}
-					{#if isNighttime()}
-						<Moon size={18} weight="duotone" />
-					{:else}
-						<Sun size={18} weight="duotone" />
-					{/if}
-				{:else if weatherIcon === 'cloud-sun'}
-					<CloudSun size={18} weight="duotone" />
-				{:else if weatherIcon === 'cloud'}
-					<Cloud size={18} weight="duotone" />
-				{:else if weatherIcon === 'rain'}
-					<CloudRain size={18} weight="duotone" />
-				{:else if weatherIcon === 'snow'}
-					<CloudSnow size={18} weight="duotone" />
-				{:else if weatherIcon === 'storm'}
-					<CloudLightning size={18} weight="duotone" />
-				{/if}
-			</span>
-			<span>{weather.temp}°</span>
-			<span class="weather-sep">·</span>
-			<span>{getWeatherLabel(weather.weather_code)}</span>
-			<span class="weather-sep">·</span>
-			<span>H:{weather.high}° L:{weather.low}°</span>
-			{#if weather.rain_chance > 0}
-				<span class="weather-sep">·</span>
-				<span class="weather-rain">
-					{weather.rain_chance}% rain
-				</span>
-			{/if}
-			<button class="weather-location" onclick={(e) => { e.stopPropagation(); showZipInput = !showZipInput; }}>{weatherLocation} <CaretDown size={10} weight="bold" /></button>
-		</div>
-		{#if forecastExpanded && weather?.hourly?.length > 0}
-			<div class="forecast-row">
-				{#each weather.hourly as hour}
-					<div class="forecast-pill">
-						<span class="forecast-time">
-							{new Date(hour.time).toLocaleTimeString('en-US', { hour: 'numeric' })}
-						</span>
-						<span class="weather-icon">
-							{#if hour.weather_code === 0 || hour.weather_code === 1}
-								{#if isHourNighttime(hour.time)}
-									<Moon size={16} weight="duotone" />
-								{:else}
-									<Sun size={16} weight="duotone" />
-								{/if}
-							{:else if hour.weather_code === 2}
-								<CloudSun size={16} weight="duotone" />
-							{:else if hour.weather_code === 3 || hour.weather_code === 45}
-								<Cloud size={16} weight="duotone" />
-							{:else if hour.weather_code === 63}
-								<CloudRain size={16} weight="duotone" />
-							{:else if hour.weather_code === 73}
-								<CloudSnow size={16} weight="duotone" />
-							{:else if hour.weather_code === 95}
-								<CloudLightning size={16} weight="duotone" />
-							{:else}
-								{#if isHourNighttime(hour.time)}
-									<Moon size={16} weight="duotone" />
-								{:else}
-									<Sun size={16} weight="duotone" />
-								{/if}
-							{/if}
-						</span>
-						<span class="forecast-temp">{hour.temp}°</span>
-					</div>
-				{/each}
-			</div>
-		{/if}
-	{:else if showZipInput}
-		<div class="weather-line">
-			<span>Set your location:</span>
-		</div>
-	{/if}
-	{#if showZipInput}
-		<form class="weather-zip-form" onsubmit={(e) => { e.preventDefault(); handleSetZip(); }}>
-			<input class="weather-zip-input" type="text" bind:value={zipInput} placeholder="City or zip code" />
-			<button class="weather-zip-btn" type="submit">Set</button>
-		</form>
-	{/if}
+	<!-- Weather widget hidden — code kept for potential re-enable -->
 
 	{#if !factDismissed}
 		<div class="fact-card">
