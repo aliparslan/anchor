@@ -44,15 +44,21 @@
 		type PomodoroState
 	} from '$lib/timer';
 
-	let { totalMinutesToday = $bindable(0) }: { totalMinutesToday: number } = $props();
+	let { totalMinutesToday = $bindable(0), workDuration = 25, focusGoal = 240 }: { totalMinutesToday: number; workDuration?: number; focusGoal?: number } = $props();
 
 	let state = $state<PomodoroState>(loadState());
 	let remainingMs = $state(0);
+
+	// Override working duration from settings
+	$effect(() => {
+		DURATIONS.working = workDuration * 60 * 1000;
+	});
 	let intervalId: ReturnType<typeof setInterval> | null = null;
 	let completing = false;
 	let notifPermission = $state<string>('Notification' in globalThis ? Notification.permission : 'denied');
 
-	const FOCUS_GOAL = 240;
+	const goalHours = $derived(Math.floor(focusGoal / 60));
+	const goalMins = $derived(focusGoal % 60);
 
 	const statusLabel: Record<string, string> = {
 		idle: 'Ready',
@@ -117,7 +123,7 @@
 	}
 
 	function displayTime(): string {
-		if (state.status === 'idle') return '25:00';
+		if (state.status === 'idle') return formatTime(workDuration * 60 * 1000);
 		return formatTime(remainingMs);
 	}
 
@@ -188,7 +194,7 @@
 		{/each}
 	</div>
 	<span class="pomo-focus-label">
-		{focusHours}h{focusMins > 0 ? ` ${focusMins}m` : ''} / 4h
+		{focusHours}h{focusMins > 0 ? ` ${focusMins}m` : ''} / {goalHours}h{goalMins > 0 ? `${goalMins}m` : ''}
 	</span>
 </div>
 
