@@ -3,6 +3,7 @@
 		fetchPomodoroToday,
 		fetchWeather, setWeatherZip,
 		fetchVapidPublicKey, registerPushSubscription,
+		fetchPreferences,
 		type WeatherData
 	} from '$lib/api';
 	import { getCached, setCached } from '$lib/cache';
@@ -27,6 +28,9 @@
 	let fetchError = $state(false);
 	let pomodoroMinutes = $state(_c?.pomodoroMinutes ?? 0);
 	let showConfetti = $state(false);
+	let userName = $state('');
+	let pomoDuration = $state(25);
+	let focusGoal = $state(240);
 	let factDismissed = $state(
 		typeof window !== 'undefined' && localStorage.getItem('fact_dismissed_date') === localDate()
 	);
@@ -108,11 +112,12 @@
 	}
 
 	function getGreeting(): string {
+		const name = userName || 'there';
 		const hour = new Date().getHours();
-		if (hour >= 21) return 'Wind down, Alip';
-		if (hour < 12) return 'Good morning, Alip';
-		if (hour < 17) return 'Good afternoon, Alip';
-		return 'Good evening, Alip';
+		if (hour >= 21) return `Wind down, ${name}`;
+		if (hour < 12) return `Good morning, ${name}`;
+		if (hour < 17) return `Good afternoon, ${name}`;
+		return `Good evening, ${name}`;
 	}
 
 	async function setupPushNotifications() {
@@ -156,9 +161,10 @@
 		setupPushNotifications();
 		Promise.all([
 			fetchPomodoroToday(),
-			fetchWeather()
+			fetchWeather(),
+			fetchPreferences()
 		])
-			.then(([pomodoro, weatherData]) => {
+			.then(([pomodoro, weatherData, prefs]) => {
 				pomodoroMinutes = pomodoro.total_minutes;
 				if (weatherData.weather) {
 					weather = weatherData.weather;
@@ -166,6 +172,9 @@
 				}
 				weatherZip = weatherData.zip_code;
 				if (!weatherData.zip_code) showZipInput = true;
+				userName = prefs.name;
+				pomoDuration = prefs.pomo_duration;
+				focusGoal = prefs.focus_goal;
 			})
 			.catch((err) => { console.warn('[Home] fetch error:', err); fetchError = true; })
 			.finally(() => {
@@ -296,7 +305,7 @@
 
 	<SectionHeader title="Focus" style="margin-top: var(--space-widget)" />
 	<div class="home-top">
-		<PomodoroTimer bind:totalMinutesToday={pomodoroMinutes} />
+		<PomodoroTimer bind:totalMinutesToday={pomodoroMinutes} workDuration={pomoDuration} {focusGoal} />
 	</div>
 
 	<SectionHeader title="Journal" />
