@@ -452,6 +452,15 @@ export async function refreshRss(): Promise<RssItem[]> {
 	return data.items;
 }
 
+export async function dismissRssItem(id: number): Promise<void> {
+	await apiFetch(`${BASE}/api/rss/dismiss/${id}`, { method: 'POST' });
+}
+
+export async function fetchDismissedRssIds(): Promise<number[]> {
+	const data = await apiFetch<{ dismissed: number[] }>(`${BASE}/api/rss/dismissed`);
+	return data.dismissed;
+}
+
 // --- Status ---
 
 export interface SystemStatus {
@@ -553,6 +562,46 @@ export async function searchAll(query: string): Promise<SearchResults> {
 
 export async function fetchDashboardAge(): Promise<{ days: number; since: string }> {
 	return apiFetch(`${BASE}/api/status/age`);
+}
+
+// --- Preferences ---
+
+export async function fetchPreferences(): Promise<{ name: string; pomo_duration: number; focus_goal: number }> {
+	return apiFetch(`${BASE}/api/settings/preferences`);
+}
+
+export async function savePreferences(prefs: { name?: string; pomo_duration?: number; focus_goal?: number }): Promise<void> {
+	return apiFetch(`${BASE}/api/settings/preferences`, {
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(prefs)
+	});
+}
+
+// --- RSS Feeds management ---
+
+export interface RssFeedConfig {
+	id: number;
+	name: string;
+	feed_url: string;
+	site_url: string;
+}
+
+export async function fetchFeedConfigs(): Promise<RssFeedConfig[]> {
+	const res = await apiFetch<{ feeds: RssFeedConfig[] }>(`${BASE}/api/settings/feeds`);
+	return res.feeds;
+}
+
+export async function addFeedConfig(feed: { name: string; feed_url: string; site_url: string }): Promise<RssFeedConfig> {
+	return apiFetch(`${BASE}/api/settings/feeds`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(feed)
+	});
+}
+
+export async function deleteFeedConfig(id: number): Promise<void> {
+	return apiFetch(`${BASE}/api/settings/feeds/${id}`, { method: 'DELETE' });
 }
 
 // --- Todos ---

@@ -263,6 +263,54 @@ async def save_rss_items(feed_id: int, items: list[dict]):
         await db.close()
 
 
+async def add_rss_feed(name: str, feed_url: str, site_url: str) -> dict:
+    db = await get_db()
+    try:
+        cursor = await db.execute(
+            "INSERT INTO rss_feeds (name, feed_url, site_url) VALUES (?, ?, ?)",
+            (name, feed_url, site_url),
+        )
+        await db.commit()
+        cur = await db.execute("SELECT * FROM rss_feeds WHERE id = ?", (cursor.lastrowid,))
+        row = await cur.fetchone()
+        return dict(row)
+    finally:
+        await db.close()
+
+
+async def delete_rss_feed(feed_id: int):
+    db = await get_db()
+    try:
+        await db.execute("DELETE FROM rss_items WHERE feed_id = ?", (feed_id,))
+        await db.execute("DELETE FROM rss_feeds WHERE id = ?", (feed_id,))
+        await db.commit()
+    finally:
+        await db.close()
+
+
+async def dismiss_rss_item(item_id: int):
+    now = datetime.now(timezone.utc).isoformat()
+    db = await get_db()
+    try:
+        await db.execute(
+            "INSERT OR IGNORE INTO dismissed_rss (item_id, dismissed_at) VALUES (?, ?)",
+            (item_id, now),
+        )
+        await db.commit()
+    finally:
+        await db.close()
+
+
+async def get_dismissed_rss_ids() -> list[int]:
+    db = await get_db()
+    try:
+        cursor = await db.execute("SELECT item_id FROM dismissed_rss")
+        rows = await cursor.fetchall()
+        return [row["item_id"] for row in rows]
+    finally:
+        await db.close()
+
+
 async def update_feed_fetched(feed_id: int):
     now = datetime.now(timezone.utc).isoformat()
     db = await get_db()

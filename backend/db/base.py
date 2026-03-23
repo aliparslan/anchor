@@ -138,6 +138,11 @@ async def init_db():
                 guid TEXT UNIQUE
             );
 
+            CREATE TABLE IF NOT EXISTS dismissed_rss (
+                item_id INTEGER PRIMARY KEY,
+                dismissed_at TEXT NOT NULL
+            );
+
             CREATE TABLE IF NOT EXISTS water_log (
                 date TEXT PRIMARY KEY,
                 glasses INTEGER NOT NULL DEFAULT 0

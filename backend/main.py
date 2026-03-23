@@ -72,7 +72,12 @@ from db import (
     get_streak,
     get_daily_score,
     seed_rss_feeds,
+    get_rss_feeds,
     get_rss_items,
+    add_rss_feed,
+    delete_rss_feed,
+    dismiss_rss_item,
+    get_dismissed_rss_ids,
     get_water_today,
     increment_water,
     decrement_water,
@@ -209,6 +214,19 @@ class TodoReorderBody(BaseModel):
 class CustomHabitBody(BaseModel):
     name: str = Field(min_length=1, max_length=100)
 
+
+class PreferencesBody(BaseModel):
+    name: str | None = None
+    pomo_duration: int | None = None
+    focus_goal: int | None = None
+
+
+class FeedBody(BaseModel):
+    name: str = Field(max_length=200)
+    feed_url: str = Field(max_length=2000)
+    site_url: str = Field(max_length=2000)
+
+
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend" / "build"
 
 scheduler = AsyncIOScheduler()
@@ -286,6 +304,8 @@ async def refresh_youtube():
 @app.get("/api/rss")
 async def api_rss():
     items = await get_rss_items(limit=50)
+    dismissed = set(await get_dismissed_rss_ids())
+    items = [i for i in items if i["id"] not in dismissed]
     return {"items": items}
 
 
@@ -293,7 +313,21 @@ async def api_rss():
 async def api_refresh_rss():
     await fetch_all_feeds()
     items = await get_rss_items(limit=50)
+    dismissed = set(await get_dismissed_rss_ids())
+    items = [i for i in items if i["id"] not in dismissed]
     return {"items": items, "refreshed": True}
+
+
+@app.get("/api/rss/dismissed")
+async def api_dismissed_rss():
+    ids = await get_dismissed_rss_ids()
+    return {"dismissed": ids}
+
+
+@app.post("/api/rss/dismiss/{item_id}")
+async def api_dismiss_rss(item_id: int):
+    await dismiss_rss_item(item_id)
+    return {"ok": True}
 
 
 @app.get("/api/journal/dates")
@@ -359,7 +393,8 @@ async def api_pomodoro_today():
 @app.post("/api/pomodoro/complete")
 async def api_pomodoro_complete():
     today = date.today().isoformat()
-    await save_pomodoro_session(today, 25)
+    pomo_duration = int(await get_setting("pomo_duration") or 25)
+    await save_pomodoro_session(today, pomo_duration)
     sessions = await get_pomodoro_sessions(today)
     total_minutes = sum(s["duration_minutes"] for s in sessions)
     return {"sessions": sessions, "total_minutes": total_minutes}
@@ -684,6 +719,46 @@ async def api_score_today():
 async def api_review_week():
     today = date.today().isoformat()
     return await get_weekly_review(today)
+
+
+# --- Settings ---
+
+
+@app.get("/api/settings/preferences")
+async def api_get_preferences():
+    name = await get_setting("user_name") or "Alip"
+    pomo_duration = int(await get_setting("pomo_duration") or 25)
+    focus_goal = int(await get_setting("focus_goal") or 240)
+    return {"name": name, "pomo_duration": pomo_duration, "focus_goal": focus_goal}
+
+
+@app.put("/api/settings/preferences")
+async def api_set_preferences(body: PreferencesBody):
+    if body.name is not None:
+        await save_setting("user_name", body.name)
+    if body.pomo_duration is not None:
+        await save_setting("pomo_duration", str(body.pomo_duration))
+    if body.focus_goal is not None:
+        await save_setting("focus_goal", str(body.focus_goal))
+    return await api_get_preferences()
+
+
+@app.get("/api/settings/feeds")
+async def api_get_feeds():
+    feeds = await get_rss_feeds()
+    return {"feeds": feeds}
+
+
+@app.post("/api/settings/feeds")
+async def api_add_feed(body: FeedBody):
+    feed = await add_rss_feed(body.name, body.feed_url, body.site_url)
+    return {"feed": feed}
+
+
+@app.delete("/api/settings/feeds/{feed_id}")
+async def api_delete_feed(feed_id: int):
+    await delete_rss_feed(feed_id)
+    return {"ok": True}
 
 
 # --- Status ---

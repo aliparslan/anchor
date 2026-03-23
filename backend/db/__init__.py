@@ -56,6 +56,10 @@ from db.feed import (
     get_rss_items,
     save_rss_items,
     update_feed_fetched,
+    add_rss_feed,
+    delete_rss_feed,
+    dismiss_rss_item,
+    get_dismissed_rss_ids,
 )
 
 from db.mit import (
