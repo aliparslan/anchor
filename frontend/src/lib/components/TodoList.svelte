@@ -83,6 +83,7 @@
 		border-radius: 10px;
 		background: var(--card-bg);
 		border: 1px solid var(--border);
+		overflow: hidden;
 	}
 
 	/* Staggered entrance — only opacity, no transform (avoids flip conflict) */
