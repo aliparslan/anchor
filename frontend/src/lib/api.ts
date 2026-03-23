@@ -554,3 +554,59 @@ export async function searchAll(query: string): Promise<SearchResults> {
 export async function fetchDashboardAge(): Promise<{ days: number; since: string }> {
 	return apiFetch(`${BASE}/api/status/age`);
 }
+
+// --- Todos ---
+
+export interface Todo {
+	id: number;
+	text: string;
+	completed_at: string | null;
+	position: number;
+	created_at: string;
+	date: string;
+}
+
+export async function fetchTodos(): Promise<Todo[]> {
+	const data = await apiFetch<{ todos: Todo[] }>(`${BASE}/api/todos`);
+	return data.todos;
+}
+
+export async function createTodo(text: string): Promise<Todo> {
+	const data = await apiFetch<{ todo: Todo }>(`${BASE}/api/todos`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ text })
+	});
+	return data.todo;
+}
+
+export async function updateTodo(id: number, text: string): Promise<Todo> {
+	const data = await apiFetch<{ todo: Todo }>(`${BASE}/api/todos/${id}`, {
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ text })
+	});
+	return data.todo;
+}
+
+export async function completeTodo(id: number): Promise<Todo> {
+	const data = await apiFetch<{ todo: Todo }>(`${BASE}/api/todos/${id}/complete`, { method: 'POST' });
+	return data.todo;
+}
+
+export async function undoTodo(id: number): Promise<Todo> {
+	const data = await apiFetch<{ todo: Todo }>(`${BASE}/api/todos/${id}/undo`, { method: 'POST' });
+	return data.todo;
+}
+
+export async function deleteTodo(id: number): Promise<void> {
+	await apiFetch(`${BASE}/api/todos/${id}`, { method: 'DELETE' });
+}
+
+export async function reorderTodos(ids: number[]): Promise<void> {
+	await apiFetch(`${BASE}/api/todos/reorder`, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ ids })
+	});
+}
