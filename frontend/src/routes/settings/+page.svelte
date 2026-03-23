@@ -39,9 +39,16 @@
 		const interval = setInterval(refresh, 30000);
 		return () => clearInterval(interval);
 	});
+
+	function isStale(dateStr: string): boolean {
+		const computed = new Date(dateStr);
+		const now = new Date();
+		const diffMs = now.getTime() - computed.getTime();
+		return diffMs > 7 * 24 * 60 * 60 * 1000;
+	}
 </script>
 
-<PageHeader title="Status" />
+<PageHeader title="Settings" />
 
 <!-- System -->
 <div class="home-section">
@@ -91,7 +98,12 @@
 				<Robot size={18} weight="duotone" />
 				<span class="status-card-name">Claude Code</span>
 				{#if claude.last_computed}
-					<span class="status-card-meta">as of {claude.last_computed}</span>
+					<span class="status-card-meta">
+						as of {claude.last_computed}
+						{#if isStale(claude.last_computed)}
+							<span class="stale-label">(stale)</span>
+						{/if}
+					</span>
 				{/if}
 			</div>
 			<div class="status-stats">
@@ -187,6 +199,11 @@
 		font-size: 11px;
 		color: var(--text-tertiary);
 		margin-left: auto;
+	}
+
+	.stale-label {
+		color: var(--text-tertiary);
+		font-style: italic;
 	}
 
 	.status-bars {

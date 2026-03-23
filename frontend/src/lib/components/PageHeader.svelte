@@ -3,7 +3,7 @@
 	import { getScore, onScoreChange, refreshScore } from '$lib/score';
 	import type { DailyScore } from '$lib/api';
 	import ShutdownModal from './ShutdownModal.svelte';
-	import { Moon, Sun } from 'phosphor-svelte';
+	import { Moon, Sun, GearSix } from 'phosphor-svelte';
 
 	let { title }: { title: string } = $props();
 
@@ -27,6 +27,9 @@
 				<span class="score-ring-text">{dailyScore.score}</span>
 			</div>
 		{/if}
+		<a href="/settings" class="theme-toggle" aria-label="Settings">
+			<GearSix size={18} weight="duotone" />
+		</a>
 		<button class="theme-toggle" onclick={toggleTheme} aria-label="Toggle theme">
 			{#if $theme === 'light'}
 				<Moon size={18} weight="duotone" />

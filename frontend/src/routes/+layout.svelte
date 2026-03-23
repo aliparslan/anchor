@@ -3,7 +3,7 @@
 	import { initTheme } from '$lib/theme';
 	import QuickCaptureButton from '$lib/components/QuickCaptureButton.svelte';
 	import SearchOverlay from '$lib/components/SearchOverlay.svelte';
-	import { House, Newspaper, NotePencil, ChartBar, Pulse } from 'phosphor-svelte';
+	import { House, Newspaper, NotePencil, ChartBar, ListChecks } from 'phosphor-svelte';
 	import '../app.css';
 	let { children } = $props();
 
@@ -37,8 +37,8 @@
 		{ href: '/', label: 'Home', icon: House },
 		{ href: '/feed/', label: 'Feed', icon: Newspaper },
 		{ type: 'capture' as const },
+		{ href: '/todos/', label: 'Todos', icon: ListChecks },
 		{ href: '/track/', label: 'Track', icon: ChartBar },
-		{ href: '/status/', label: 'Status', icon: Pulse }
 	];
 
 	function isActive(href: string): boolean {
