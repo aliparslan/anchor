@@ -1,5 +1,4 @@
 import aiosqlite
-from datetime import datetime, date, timedelta, timezone
 from pathlib import Path
 
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
@@ -114,13 +113,6 @@ async def init_db():
                 updated_at TEXT NOT NULL
             );
 
-            CREATE TABLE IF NOT EXISTS quick_capture (
-                id INTEGER PRIMARY KEY,
-                text TEXT NOT NULL,
-                created_at TEXT NOT NULL,
-                archived_at TEXT
-            );
-
             CREATE TABLE IF NOT EXISTS custom_habits (
                 id INTEGER PRIMARY KEY,
                 name TEXT NOT NULL UNIQUE,
@@ -157,13 +149,6 @@ async def init_db():
                 created_at TEXT NOT NULL
             );
 
-            CREATE TABLE IF NOT EXISTS achievements (
-                id INTEGER PRIMARY KEY,
-                name TEXT NOT NULL UNIQUE,
-                description TEXT NOT NULL,
-                earned_at TEXT NOT NULL
-            );
-
             CREATE TABLE IF NOT EXISTS todos (
                 id INTEGER PRIMARY KEY,
                 text TEXT NOT NULL,
@@ -178,7 +163,6 @@ async def init_db():
         await db.executescript("""
             CREATE INDEX IF NOT EXISTS idx_pomodoro_date ON pomodoro_sessions(date);
             CREATE INDEX IF NOT EXISTS idx_rss_published ON rss_items(published_at DESC);
-            CREATE INDEX IF NOT EXISTS idx_capture_archived ON quick_capture(archived_at);
             CREATE INDEX IF NOT EXISTS idx_habit_completions_date ON habit_completions(date);
             CREATE INDEX IF NOT EXISTS idx_sleep_log_date ON sleep_log(date);
             CREATE INDEX IF NOT EXISTS idx_workout_log_date ON workout_log(date);
