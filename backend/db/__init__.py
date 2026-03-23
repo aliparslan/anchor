@@ -83,6 +83,7 @@ from db.todos import (
 from db.search import search_all
 
 from db.stats import (
+    FOCUS_GOAL_MINUTES,
     get_habits_week,
     get_streaks,
     get_daily_summary,
