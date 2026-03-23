@@ -304,3 +304,186 @@
 
 	<Confetti trigger={showConfetti} />
 </div>
+
+<style>
+	/* Home page */
+	.home-top {
+		margin-bottom: var(--space-widget);
+	}
+
+	/* Weather */
+	.weather-line {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		margin-bottom: var(--space-widget);
+		flex-wrap: wrap;
+		font-family: var(--font-mono);
+		font-size: 12px;
+		font-weight: 400;
+		color: var(--text-secondary);
+		line-height: 2;
+		row-gap: 2px;
+	}
+
+	.weather-icon {
+		display: flex;
+		align-items: center;
+		color: var(--text-secondary);
+	}
+
+	.weather-sep {
+		color: var(--text-tertiary);
+	}
+
+	.weather-rain {
+		display: inline-flex;
+		align-items: center;
+		gap: 3px;
+		color: var(--color-blue);
+	}
+
+	.weather-location {
+		font-size: 12px;
+		color: var(--text-tertiary);
+		background: none;
+		border: none;
+		cursor: pointer;
+		font-family: inherit;
+		padding: 0;
+		margin-left: 4px;
+	}
+
+	.weather-location:hover {
+		color: var(--text-secondary);
+	}
+
+	.weather-zip-form {
+		display: flex;
+		gap: 8px;
+		margin-bottom: 20px;
+	}
+
+	.weather-zip-input {
+		padding: 6px 10px;
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		background: var(--bg);
+		color: var(--text);
+		font-family: inherit;
+		font-size: 13px;
+		width: 160px;
+		outline: none;
+	}
+
+	.weather-zip-input:focus {
+		border-color: var(--accent);
+	}
+
+	.weather-zip-btn {
+		padding: 6px 14px;
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		background: var(--bg);
+		color: var(--text-secondary);
+		font-family: inherit;
+		font-size: 13px;
+		cursor: pointer;
+		transition: all 0.15s ease;
+	}
+
+	.weather-zip-btn:hover {
+		background: var(--bg-hover);
+		color: var(--text);
+		border-color: var(--text-tertiary);
+	}
+
+	/* Expandable weather forecast */
+	.forecast-row {
+		display: flex;
+		gap: 8px;
+		margin-bottom: var(--space-widget);
+		animation: fadeSlideIn 0.2s ease;
+	}
+
+	.forecast-pill {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 4px;
+		padding: 8px 4px;
+		border-radius: 8px;
+		background: var(--card-bg);
+	}
+
+	.forecast-time {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		color: var(--text-tertiary);
+	}
+
+	.forecast-temp {
+		font-family: var(--font-mono);
+		font-size: 13px;
+		font-weight: 500;
+		color: var(--text);
+	}
+
+	@keyframes fadeSlideIn {
+		from { opacity: 0; transform: translateY(-4px); }
+		to { opacity: 1; transform: translateY(0); }
+	}
+
+	/* Daily fact card */
+	.fact-card {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 10px 14px;
+		margin-bottom: var(--space-widget);
+		border-radius: 8px;
+		background: var(--bg-secondary);
+		border: 1px solid var(--border);
+		font-family: var(--font-sans);
+		font-size: 13px;
+		color: var(--text-secondary);
+		line-height: 1.5;
+	}
+
+	:global(.fact-icon) {
+		flex-shrink: 0;
+		color: var(--text-tertiary);
+	}
+
+	.fact-text {
+		flex: 1;
+	}
+
+	.fact-dismiss {
+		flex-shrink: 0;
+		width: 36px;
+		height: 36px;
+		border: none;
+		background: none;
+		color: var(--text-tertiary);
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0;
+		border-radius: 4px;
+		transition: all 0.15s ease;
+	}
+
+	.fact-dismiss:hover {
+		background: var(--bg-hover);
+		color: var(--text);
+	}
+
+	/* Quiet hours — after 9pm, softer palette */
+	:global(.quiet-hours) :global(.greeting) {
+		opacity: 0.85;
+	}
+</style>

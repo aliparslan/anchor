@@ -33,3 +33,59 @@
 		</div>
 	</div>
 {/if}
+
+<style>
+/* Video player overlay */
+.player-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 100;
+	background: rgba(0, 0, 0, 0.75);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+}
+
+.player-container {
+	position: relative;
+	width: 100%;
+	max-width: 900px;
+}
+
+.player-close {
+	position: absolute;
+	top: -40px;
+	right: 0;
+	background: none;
+	border: none;
+	color: #fff;
+	cursor: pointer;
+	opacity: 0.7;
+	transition: opacity 0.15s ease;
+	line-height: 1;
+	display: flex;
+	align-items: center;
+}
+
+.player-close:hover {
+	opacity: 1;
+}
+
+.player-wrapper {
+	position: relative;
+	width: 100%;
+	padding-bottom: 56.25%; /* 16:9 */
+	background: #000;
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+.player-wrapper iframe {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+}
+</style>

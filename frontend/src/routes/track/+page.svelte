@@ -11,6 +11,7 @@
 	import HabitWeekView from '$lib/components/HabitWeekView.svelte';
 	import FocusHeatmap from '$lib/components/FocusHeatmap.svelte';
 	import WeeklyReview from '$lib/components/WeeklyReview.svelte';
+	import { focusLabel } from '$lib/utils';
 	import { getCached, setCached, clearCached } from '$lib/cache';
 	import { onDestroy } from 'svelte';
 	import { tweened } from 'svelte/motion';
@@ -43,12 +44,8 @@
 		return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 	}
 
-	function focusLabel(minutes: number): string {
-		const h = Math.floor(minutes / 60);
-		const m = minutes % 60;
-		if (h === 0) return `${m}m / 4h`;
-		if (m === 0) return `${h}h / 4h`;
-		return `${h}h ${m}m / 4h`;
+	function focusLabelWithGoal(minutes: number): string {
+		return `${focusLabel(minutes)} / 4h`;
 	}
 
 	async function handleToggleWorkout() {
@@ -270,7 +267,7 @@
 			</div>
 			<div class="habit-info">
 				<span class="habit-name">Focus</span>
-				<span class="habit-sub">{focusLabel(habits.focus_minutes)}</span>
+				<span class="habit-sub">{focusLabelWithGoal(habits.focus_minutes)}</span>
 			</div>
 			{#if streaks.focus}
 				<span class="habit-streak">{streaks.focus}d</span>
@@ -736,6 +733,100 @@
 		text-align: center;
 		width: 100%;
 		padding: 24px 0;
+	}
+
+	/* Habits page */
+	.habits-date {
+		font-family: var(--font-display);
+		font-size: 13px;
+		color: var(--text-tertiary);
+		margin-bottom: var(--space-widget);
+		margin-top: -14px;
+	}
+
+	.habits-list {
+		border-radius: 10px;
+		background: var(--card-bg);
+		border: 1px solid var(--border);
+		overflow: hidden;
+	}
+
+	.habit-row {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		padding: 14px 16px;
+		border-bottom: 1px solid var(--border);
+		cursor: pointer;
+		transition: background 0.15s ease, transform 0.15s ease;
+		user-select: none;
+	}
+
+	.habit-row.habit-row-last {
+		border-bottom: none;
+	}
+
+	.habit-row:hover {
+		background: var(--bg-hover);
+	}
+
+	.habit-row:active {
+		transform: scale(0.98);
+	}
+
+	.habit-check {
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		border: 2px solid var(--border);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		color: var(--bg);
+		transition: all 0.15s ease;
+	}
+
+	.habit-check.habit-check-done {
+		background: var(--accent);
+		border-color: var(--accent);
+		animation: checkPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+
+	@keyframes checkPop {
+		0% { transform: scale(0.8); }
+		50% { transform: scale(1.15); }
+		100% { transform: scale(1); }
+	}
+
+	.habit-info {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.habit-name {
+		font-family: var(--font-display);
+		font-size: 15px;
+		font-weight: 500;
+		color: var(--text);
+	}
+
+	.habit-done .habit-name {
+		color: var(--text-secondary);
+	}
+
+	.habit-sub {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		color: var(--text-tertiary);
+	}
+
+	.habit-auto-badge {
+		font-size: 11px;
+		color: var(--text-tertiary);
+		font-family: var(--font-display);
 	}
 
 </style>
