@@ -510,7 +510,7 @@
 	border-radius: 10px;
 	background: var(--card-bg);
 	border: 1px solid var(--border);
-	padding: 0 14px;
+	padding: 4px 14px;
 }
 
 .hn-item {

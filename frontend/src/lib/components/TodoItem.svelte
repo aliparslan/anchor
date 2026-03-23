@@ -175,7 +175,7 @@
 		display: flex;
 		align-items: center;
 		gap: 12px;
-		padding: 14px 16px;
+		padding: 14px 14px;
 		background: var(--card-bg);
 		-webkit-tap-highlight-color: transparent;
 		user-select: none;
