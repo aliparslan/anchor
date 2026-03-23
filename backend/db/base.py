@@ -163,6 +163,15 @@ async def init_db():
                 description TEXT NOT NULL,
                 earned_at TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS todos (
+                id INTEGER PRIMARY KEY,
+                text TEXT NOT NULL,
+                completed_at TEXT,
+                position INTEGER NOT NULL,
+                created_at TEXT NOT NULL,
+                date TEXT NOT NULL
+            );
         """)
         await db.execute("PRAGMA journal_mode=WAL")
         await db.execute("PRAGMA foreign_keys=ON")
@@ -176,6 +185,7 @@ async def init_db():
             CREATE INDEX IF NOT EXISTS idx_mood_log_date ON mood_log(date);
             CREATE INDEX IF NOT EXISTS idx_journal_entries_date ON journal_entries(date);
             CREATE INDEX IF NOT EXISTS idx_daily_mit_date ON daily_mit(date);
+            CREATE INDEX IF NOT EXISTS idx_todos_date ON todos(date);
         """)
         await db.commit()
     finally:
