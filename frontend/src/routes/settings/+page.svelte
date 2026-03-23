@@ -1,54 +1,169 @@
 <script lang="ts">
 	import {
-		fetchSystemStatus, fetchClaudeStatus, fetchTailscaleStatus,
+		fetchSystemStatus, fetchTailscaleStatus,
 		fetchDashboardAge,
-		type SystemStatus, type ClaudeStatus, type TailscaleStatus
+		fetchPreferences, savePreferences,
+		fetchFeedConfigs, addFeedConfig, deleteFeedConfig,
+		type SystemStatus, type TailscaleStatus, type RssFeedConfig
 	} from '$lib/api';
 	import { getCached, setCached } from '$lib/cache';
-	import { Desktop, Robot, Globe, Circle } from 'phosphor-svelte';
+	import { Desktop, Globe, Circle, X, Plus } from 'phosphor-svelte';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import SectionHeader from '$lib/components/SectionHeader.svelte';
-	import { formatTokens } from '$lib/format';
 	import { onDestroy } from 'svelte';
 
 	const _c = getCached<any>('status');
 	let system = $state<SystemStatus | null>(_c?.system ?? null);
-	let claude = $state<ClaudeStatus | null>(_c?.claude ?? null);
 	let tailscale = $state<TailscaleStatus | null>(_c?.tailscale ?? null);
 	let dashboardAge = $state<{ days: number; since: string } | null>(_c?.dashboardAge ?? null);
 
+	// Preferences
+	let prefName = $state('');
+	let pomoDuration = $state(25);
+	let focusGoal = $state(120);
+	let prefSaved = $state(false);
+	let prefSavedTimeout: ReturnType<typeof setTimeout> | null = null;
+
+	// RSS Feeds
+	let feeds = $state<RssFeedConfig[]>([]);
+	let newFeedName = $state('');
+	let newFeedUrl = $state('');
+	let newFeedSiteUrl = $state('');
+
 	onDestroy(() => {
-		setCached('status', { system, claude, tailscale, dashboardAge });
+		setCached('status', { system, tailscale, dashboardAge });
+		if (prefSavedTimeout) clearTimeout(prefSavedTimeout);
 	});
 
 	async function refresh() {
-		const [s, c, t, age] = await Promise.all([
+		const [s, t, age] = await Promise.all([
 			fetchSystemStatus().catch(() => null),
-			fetchClaudeStatus().catch(() => null),
 			fetchTailscaleStatus().catch(() => null),
 			fetchDashboardAge().catch(() => null),
 		]);
 		if (s) system = s;
-		if (c) claude = c;
 		if (t) tailscale = t;
 		if (age) dashboardAge = age;
 	}
 
+	async function loadPreferences() {
+		try {
+			const prefs = await fetchPreferences();
+			prefName = prefs.name;
+			pomoDuration = prefs.pomo_duration;
+			focusGoal = prefs.focus_goal;
+		} catch { /* no-op */ }
+	}
+
+	async function loadFeeds() {
+		try {
+			feeds = await fetchFeedConfigs();
+		} catch { /* no-op */ }
+	}
+
+	function flashSaved() {
+		prefSaved = true;
+		if (prefSavedTimeout) clearTimeout(prefSavedTimeout);
+		prefSavedTimeout = setTimeout(() => { prefSaved = false; }, 2000);
+	}
+
+	async function handlePrefBlur() {
+		try {
+			await savePreferences({ name: prefName, pomo_duration: pomoDuration, focus_goal: focusGoal });
+			flashSaved();
+		} catch { /* no-op */ }
+	}
+
+	async function handleAddFeed() {
+		if (!newFeedName.trim() || !newFeedUrl.trim()) return;
+		try {
+			const added = await addFeedConfig({ name: newFeedName.trim(), feed_url: newFeedUrl.trim(), site_url: newFeedSiteUrl.trim() });
+			feeds = [...feeds, added];
+			newFeedName = '';
+			newFeedUrl = '';
+			newFeedSiteUrl = '';
+		} catch { /* no-op */ }
+	}
+
+	async function handleDeleteFeed(id: number) {
+		try {
+			await deleteFeedConfig(id);
+			feeds = feeds.filter(f => f.id !== id);
+		} catch { /* no-op */ }
+	}
+
 	$effect(() => {
 		refresh();
+		loadPreferences();
+		loadFeeds();
 		const interval = setInterval(refresh, 30000);
 		return () => clearInterval(interval);
 	});
-
-	function isStale(dateStr: string): boolean {
-		const computed = new Date(dateStr);
-		const now = new Date();
-		const diffMs = now.getTime() - computed.getTime();
-		return diffMs > 7 * 24 * 60 * 60 * 1000;
-	}
 </script>
 
 <PageHeader title="Settings" />
+
+<!-- Preferences -->
+<div class="home-section">
+	<SectionHeader title="Preferences">
+		{#if prefSaved}
+			<span class="saved-indicator">Saved</span>
+		{/if}
+	</SectionHeader>
+	<div class="pref-card">
+		<div class="pref-row">
+			<label class="pref-label" for="pref-name">Name</label>
+			<input id="pref-name" class="pref-input" type="text" bind:value={prefName} onblur={handlePrefBlur} />
+		</div>
+		<div class="pref-row">
+			<label class="pref-label" for="pref-pomo">Pomodoro</label>
+			<div class="pref-input-group">
+				<input id="pref-pomo" class="pref-input pref-input-num" type="number" min="1" max="120" bind:value={pomoDuration} onblur={handlePrefBlur} />
+				<span class="pref-suffix">min</span>
+			</div>
+		</div>
+		<div class="pref-row">
+			<label class="pref-label" for="pref-focus">Focus goal</label>
+			<div class="pref-input-group">
+				<input id="pref-focus" class="pref-input pref-input-num" type="number" min="1" max="720" bind:value={focusGoal} onblur={handlePrefBlur} />
+				<span class="pref-suffix">min</span>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- RSS Feeds -->
+<div class="home-section">
+	<SectionHeader title="RSS Feeds" />
+	<div class="feed-card">
+		{#if feeds.length > 0}
+			<div class="feed-list">
+				{#each feeds as feed (feed.id)}
+					<div class="feed-row">
+						<div class="feed-info">
+							<span class="feed-name">{feed.name}</span>
+							<span class="feed-url">{feed.feed_url}</span>
+						</div>
+						<button class="feed-delete" onclick={() => handleDeleteFeed(feed.id)} aria-label="Remove {feed.name}">
+							<X size={14} weight="bold" />
+						</button>
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<div class="feed-empty">No feeds configured</div>
+		{/if}
+		<form class="feed-add-form" onsubmit={(e) => { e.preventDefault(); handleAddFeed(); }}>
+			<input class="feed-add-input" type="text" placeholder="Feed name" bind:value={newFeedName} />
+			<input class="feed-add-input" type="url" placeholder="Feed URL" bind:value={newFeedUrl} />
+			<input class="feed-add-input" type="url" placeholder="Site URL (optional)" bind:value={newFeedSiteUrl} />
+			<button type="submit" class="feed-add-btn" disabled={!newFeedName.trim() || !newFeedUrl.trim()}>
+				<Plus size={14} weight="bold" />
+				Add
+			</button>
+		</form>
+	</div>
+</div>
 
 <!-- System -->
 <div class="home-section">
@@ -86,51 +201,6 @@
 		</div>
 	{:else}
 		<div class="empty">Loading...</div>
-	{/if}
-</div>
-
-<!-- Claude -->
-<div class="home-section">
-	<SectionHeader title="Claude" />
-	{#if claude?.available}
-		<div class="status-card">
-			<div class="status-card-header">
-				<Robot size={18} weight="duotone" />
-				<span class="status-card-name">Claude Code</span>
-				{#if claude.last_computed}
-					<span class="status-card-meta">
-						as of {claude.last_computed}
-						{#if isStale(claude.last_computed)}
-							<span class="stale-label">(stale)</span>
-						{/if}
-					</span>
-				{/if}
-			</div>
-			<div class="status-stats">
-				<div class="status-stat">
-					<span class="status-stat-value">{claude.total_messages?.toLocaleString()}</span>
-					<span class="status-stat-label">Messages</span>
-				</div>
-				<div class="status-stat">
-					<span class="status-stat-value">{claude.total_sessions}</span>
-					<span class="status-stat-label">Sessions</span>
-				</div>
-			</div>
-			{#if claude.model_usage}
-				<div class="status-model-list">
-					{#each Object.entries(claude.model_usage) as [model, usage]}
-						<div class="status-model-row">
-							<span class="status-model-name">{model.replace('claude-', '').replace(/-\d+$/, '')}</span>
-							<span class="status-model-tokens">
-								{formatTokens(usage.inputTokens + usage.outputTokens + (usage.cacheReadInputTokens || 0) + (usage.cacheCreationInputTokens || 0))} tokens
-							</span>
-						</div>
-					{/each}
-				</div>
-			{/if}
-		</div>
-	{:else}
-		<div class="empty">Claude stats not available</div>
 	{/if}
 </div>
 
@@ -173,6 +243,199 @@
 {/if}
 
 <style>
+	/* Preferences — matches habit row pattern */
+	.pref-card {
+		border-radius: 10px;
+		background: var(--card-bg);
+		border: 1px solid var(--border);
+		overflow: hidden;
+	}
+
+	.pref-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		padding: 14px 16px;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.pref-row:last-child {
+		border-bottom: none;
+	}
+
+	.pref-label {
+		font-family: var(--font-sans);
+		font-size: 14px;
+		color: var(--text);
+		flex-shrink: 0;
+	}
+
+	.pref-input {
+		border: none;
+		background: none;
+		color: var(--text-secondary);
+		font-family: var(--font-mono);
+		font-size: 14px;
+		outline: none;
+		text-align: right;
+		min-width: 0;
+	}
+
+	.pref-input-group {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+	}
+
+	.pref-input-num {
+		width: 48px;
+		text-align: right;
+		-moz-appearance: textfield;
+	}
+
+	.pref-input-num::-webkit-inner-spin-button,
+	.pref-input-num::-webkit-outer-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+	}
+
+	.pref-suffix {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		color: var(--text-tertiary);
+	}
+
+	.saved-indicator {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		color: var(--text-tertiary);
+	}
+
+	/* RSS Feeds — matches habits list pattern */
+	.feed-card {
+		border-radius: 10px;
+		background: var(--card-bg);
+		border: 1px solid var(--border);
+		padding: 0 16px;
+	}
+
+	.feed-list {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.feed-row {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding: 14px 0;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.feed-row:last-child {
+		border-bottom: none;
+	}
+
+	.feed-info {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+	}
+
+	.feed-name {
+		font-family: var(--font-display);
+		font-size: 13px;
+		font-weight: 500;
+		color: var(--text);
+	}
+
+	.feed-url {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		color: var(--text-tertiary);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.feed-delete {
+		background: none;
+		border: none;
+		color: var(--text-tertiary);
+		cursor: pointer;
+		padding: 4px;
+		border-radius: 4px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	.feed-delete:hover {
+		color: var(--text);
+	}
+
+	.feed-empty {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		color: var(--text-tertiary);
+		padding: 8px 0;
+	}
+
+	.feed-add-form {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		margin-top: 12px;
+		padding-top: 12px;
+		border-top: 1px solid var(--border);
+	}
+
+	.feed-add-input {
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		padding: 8px 10px;
+		background: var(--bg-inset);
+		color: var(--text);
+		font-family: var(--font-sans);
+		font-size: 13px;
+		outline: none;
+	}
+
+	.feed-add-input:focus {
+		border-color: var(--accent);
+	}
+
+	.feed-add-input::placeholder {
+		color: var(--text-tertiary);
+	}
+
+	.feed-add-btn {
+		align-self: flex-end;
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		padding: 6px 12px;
+		border: none;
+		border-radius: 6px;
+		background: var(--accent);
+		color: var(--bg);
+		font-family: var(--font-sans);
+		font-size: 12px;
+		font-weight: 600;
+		cursor: pointer;
+		transition: opacity 0.15s ease;
+	}
+
+	.feed-add-btn:disabled {
+		opacity: 0.4;
+		cursor: default;
+	}
+
+	/* System */
 	.status-card {
 		border-radius: 10px;
 		padding: 16px;
@@ -199,11 +462,6 @@
 		font-size: 11px;
 		color: var(--text-tertiary);
 		margin-left: auto;
-	}
-
-	.stale-label {
-		color: var(--text-tertiary);
-		font-style: italic;
 	}
 
 	.status-bars {
@@ -251,55 +509,6 @@
 		text-align: right;
 	}
 
-	.status-stats {
-		display: flex;
-		gap: 24px;
-		margin-bottom: 14px;
-	}
-
-	.status-stat {
-		text-align: center;
-	}
-
-	.status-stat-value {
-		display: block;
-		font-family: var(--font-mono);
-		font-size: 18px;
-		color: var(--text);
-	}
-
-	.status-stat-label {
-		font-family: var(--font-display);
-		font-size: 11px;
-		color: var(--text-tertiary);
-	}
-
-	.status-model-list {
-		display: flex;
-		flex-direction: column;
-		gap: 6px;
-		padding-top: 12px;
-		border-top: 1px solid var(--border);
-	}
-
-	.status-model-row {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-	}
-
-	.status-model-name {
-		font-family: var(--font-mono);
-		font-size: 12px;
-		color: var(--text-secondary);
-	}
-
-	.status-model-tokens {
-		font-family: var(--font-mono);
-		font-size: 11px;
-		color: var(--text-tertiary);
-	}
-
 	.status-device-list {
 		display: flex;
 		flex-direction: column;
@@ -333,5 +542,4 @@
 		color: var(--text-tertiary);
 		padding: 24px 0 8px;
 	}
-
 </style>
