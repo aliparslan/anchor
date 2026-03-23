@@ -376,9 +376,7 @@
 		<!-- Add habit row -->
 		{#if showAddHabit}
 			<div class="habit-row habit-row-last habit-add-row">
-				<div class="habit-check habit-add-icon">
-					<Plus size={14} weight="bold" />
-				</div>
+				<div class="habit-add-circle"></div>
 				<form class="habit-add-form" onsubmit={(e) => { e.preventDefault(); handleAddCustomHabit(); }}>
 					<input
 						type="text"
@@ -396,9 +394,7 @@
 		{:else}
 			<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 			<div class="habit-row habit-row-last habit-add-trigger" onclick={() => (showAddHabit = true)}>
-				<div class="habit-check habit-add-icon">
-					<Plus size={14} weight="bold" />
-				</div>
+				<div class="habit-add-circle"></div>
 				<div class="habit-info">
 					<span class="habit-name habit-add-label">Add habit</span>
 				</div>
@@ -491,10 +487,12 @@
 		opacity: 0.8;
 	}
 
-	.habit-add-icon {
-		border: 2px dashed var(--border) !important;
-		background: none !important;
-		color: var(--text-tertiary);
+	.habit-add-circle {
+		width: 20px;
+		height: 20px;
+		min-width: 20px;
+		border-radius: 50%;
+		border: 2px dashed var(--border);
 	}
 
 	.habit-add-label {
@@ -534,7 +532,7 @@
 		border-radius: 6px;
 		background: var(--accent);
 		color: var(--bg);
-		font-family: var(--font-display);
+		font-family: var(--font-sans);
 		font-size: 12px;
 		font-weight: 600;
 		cursor: pointer;
@@ -826,7 +824,7 @@
 	.habit-auto-badge {
 		font-size: 11px;
 		color: var(--text-tertiary);
-		font-family: var(--font-display);
+		font-family: var(--font-mono);
 	}
 
 </style>

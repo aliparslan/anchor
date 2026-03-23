@@ -1,7 +1,6 @@
 <script lang="ts">
   import { fetchMitToday, saveMit, toggleMit, type Mit } from '$lib/api';
   import { onDestroy } from 'svelte';
-  import { Check } from 'phosphor-svelte';
   import { tap } from '$lib/haptics';
   import { createAutoSave } from '$lib/autoSave.svelte';
 
@@ -39,9 +38,7 @@
 
 <div class="mit-card">
   <button class="mit-check" class:mit-check-done={completed} onclick={handleToggle} aria-label="Toggle MIT complete" disabled={!text.trim()}>
-    {#if completed}
-      <Check size={12} weight="bold" />
-    {/if}
+    <div class="mit-dot"></div>
   </button>
   <input
     class="mit-input"
@@ -51,6 +48,9 @@
     bind:value={text}
     oninput={handleInput}
   />
+  {#if autoSave.saved}
+    <span class="mit-saved">Saved</span>
+  {/if}
 </div>
 
 <style>
@@ -59,10 +59,9 @@
     align-items: center;
     gap: 12px;
     border-radius: 10px;
-    padding: 12px 16px;
+    padding: 14px 16px;
     border: 1px solid var(--border);
     background: var(--card-bg);
-    margin-bottom: var(--space-widget);
   }
 
   .mit-check {
@@ -77,28 +76,42 @@
     align-items: center;
     justify-content: center;
     padding: 0;
-    transition: all 0.2s ease;
-    color: var(--text-tertiary);
+    transition: border-color 0.5s ease;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .mit-check:active {
-    transform: scale(1.15);
+    transform: scale(0.85);
+  }
+
+  .mit-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    transform: scale(0);
+    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform;
   }
 
   .mit-check-done {
-    background: var(--accent);
     border-color: var(--accent);
-    color: var(--bg);
+  }
+
+  .mit-check-done .mit-dot {
+    transform: scale(1);
   }
 
   .mit-input {
     flex: 1;
     border: none;
+    border-radius: 0;
     background: none;
     color: var(--text);
     font-family: var(--font-sans);
     font-size: 14px;
     outline: none;
+    padding: 0;
   }
 
   .mit-input::placeholder {
@@ -107,6 +120,13 @@
 
   .mit-done {
     color: var(--text-tertiary);
-    transition: color 0.2s ease;
+    transition: color 0.5s ease;
+  }
+
+  .mit-saved {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-family: var(--font-mono);
+    flex-shrink: 0;
   }
 </style>

@@ -113,7 +113,10 @@
 	<div class="pref-card">
 		<div class="pref-row">
 			<label class="pref-label" for="pref-name">Name</label>
-			<input id="pref-name" class="pref-input" type="text" bind:value={prefName} onblur={handlePrefBlur} />
+			<div class="pref-input-group">
+				<input id="pref-name" class="pref-input" type="text" bind:value={prefName} onblur={handlePrefBlur} />
+				<span class="pref-suffix pref-suffix-hidden">min</span>
+			</div>
 		</div>
 		<div class="pref-row">
 			<label class="pref-label" for="pref-pomo">Pomodoro</label>
@@ -243,12 +246,12 @@
 {/if}
 
 <style>
-	/* Preferences — matches habit row pattern */
+	/* Preferences — matches habit list card pattern */
 	.pref-card {
 		border-radius: 10px;
 		background: var(--card-bg);
 		border: 1px solid var(--border);
-		overflow: hidden;
+		padding: 0 16px;
 	}
 
 	.pref-row {
@@ -256,7 +259,7 @@
 		align-items: center;
 		justify-content: space-between;
 		gap: 12px;
-		padding: 14px 16px;
+		padding: 14px 0;
 		border-bottom: 1px solid var(--border);
 	}
 
@@ -285,11 +288,12 @@
 	.pref-input-group {
 		display: flex;
 		align-items: center;
+		justify-content: flex-end;
 		gap: 4px;
 	}
 
 	.pref-input-num {
-		width: 48px;
+		width: 56px;
 		text-align: right;
 		-moz-appearance: textfield;
 	}
@@ -304,6 +308,10 @@
 		font-family: var(--font-mono);
 		font-size: 12px;
 		color: var(--text-tertiary);
+	}
+
+	.pref-suffix-hidden {
+		visibility: hidden;
 	}
 
 	.saved-indicator {
@@ -389,8 +397,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
-		margin-top: 12px;
-		padding-top: 12px;
+		padding: 12px 0 14px;
 		border-top: 1px solid var(--border);
 	}
 

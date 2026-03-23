@@ -190,9 +190,9 @@
 
 	/* === Circle — ring + inner dot like iOS Reminders === */
 	.todo-check {
-		width: 22px;
-		height: 22px;
-		min-width: 22px;
+		width: 20px;
+		height: 20px;
+		min-width: 20px;
 		border-radius: 50%;
 		border: 2px solid var(--border);
 		background: none;
@@ -201,7 +201,7 @@
 		align-items: center;
 		justify-content: center;
 		padding: 0;
-		transition: border-color 0.5s ease;
+		transition: border-color 0.15s ease;
 		-webkit-tap-highlight-color: transparent;
 		position: relative;
 		flex-shrink: 0;
@@ -213,21 +213,24 @@
 
 	/* Inner dot — fills from center with gap to ring */
 	.todo-dot {
-		width: 14px;
-		height: 14px;
+		width: 12px;
+		height: 12px;
 		border-radius: 50%;
-		background: var(--accent);
+		background: var(--text-secondary);
 		transform: scale(0);
-		transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+		transition: transform 0.15s ease;
 		will-change: transform;
 	}
 
+	/* Fill animation — slow spring on fill, fast on unfill */
 	.todo-check-done {
-		border-color: var(--accent);
+		border-color: var(--text-secondary);
+		transition: border-color 0.5s ease;
 	}
 
 	.todo-check-done .todo-dot {
 		transform: scale(1);
+		transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 	}
 
 	/* === Text === */
