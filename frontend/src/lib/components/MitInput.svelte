@@ -51,9 +51,6 @@
     bind:value={text}
     oninput={handleInput}
   />
-  {#if autoSave.saved}
-    <span class="mit-saved">Saved</span>
-  {/if}
 </div>
 
 <style>
@@ -108,16 +105,8 @@
     color: var(--text-tertiary);
   }
 
-  .mit-saved {
-    font-size: 12px;
-    color: var(--text-tertiary);
-    font-family: var(--font-mono);
-    flex-shrink: 0;
-  }
-
   .mit-done {
-    text-decoration: line-through;
     color: var(--text-tertiary);
-    transition: color 0.2s ease, text-decoration 0.2s ease;
+    transition: color 0.2s ease;
   }
 </style>
