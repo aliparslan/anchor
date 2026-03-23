@@ -747,6 +747,7 @@
 		background: var(--card-bg);
 		border: 1px solid var(--border);
 		overflow: hidden;
+		padding: 4px 0;
 	}
 
 	.habit-row {

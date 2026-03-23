@@ -246,12 +246,11 @@
 {/if}
 
 <style>
-	/* Preferences — matches habit list card pattern */
 	.pref-card {
 		border-radius: 10px;
 		background: var(--card-bg);
 		border: 1px solid var(--border);
-		padding: 0 16px;
+		padding: 4px 14px;
 	}
 
 	.pref-row {
@@ -320,12 +319,11 @@
 		color: var(--text-tertiary);
 	}
 
-	/* RSS Feeds — matches habits list pattern */
 	.feed-card {
 		border-radius: 10px;
 		background: var(--card-bg);
 		border: 1px solid var(--border);
-		padding: 0 16px;
+		padding: 4px 14px;
 	}
 
 	.feed-list {

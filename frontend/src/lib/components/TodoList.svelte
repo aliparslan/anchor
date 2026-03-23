@@ -83,6 +83,7 @@
 		border-radius: 10px;
 		background: var(--card-bg);
 		border: 1px solid var(--border);
+		padding: 4px 0;
 		overflow: hidden;
 	}
 
@@ -101,7 +102,7 @@
 		display: flex;
 		align-items: center;
 		gap: 12px;
-		padding: 14px 16px;
+		padding: 14px 14px;
 		transition: background 0.2s ease;
 	}
 
