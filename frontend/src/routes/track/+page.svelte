@@ -217,7 +217,7 @@
 <SectionHeader title="Mood" />
 <MoodSelector {mood} onselect={handleMoodSelect} />
 
-<SectionHeader title="Hydration" style="margin-top: var(--space-widget)" />
+<SectionHeader title="Hydration" style="margin-top: var(--space-section)" />
 <div class="water-widget">
 	<div class="water-header">
 		<span class="water-ml" class:water-ml-complete={waterGlasses >= 8}>{Math.round($displayedMl).toLocaleString()}</span><span class="water-ml-total">/2,000</span><span class="water-ml-unit">ml</span>
@@ -255,7 +255,7 @@
 	{/if}
 </div>
 
-<SectionHeader title="Habits" style="margin-top: var(--space-widget)" />
+<SectionHeader title="Habits" style="margin-top: var(--space-section)" />
 {#if habits}
 	<div class="habits-list">
 		<!-- Focus — auto -->
@@ -403,12 +403,10 @@
 	</div>
 {/if}
 
-<div class="track-spacer"></div>
-
 <SectionHeader title="Sleep" />
 <SleepLogger />
 
-<SectionHeader title="Insights" style="margin-top: var(--space-widget)" />
+<SectionHeader title="Insights" style="margin-top: var(--space-section)" />
 
 <HabitWeekView data={weekData} />
 
@@ -748,6 +746,7 @@
 		border: 1px solid var(--border);
 		overflow: hidden;
 		padding: 4px 0;
+		margin-bottom: var(--space-widget);
 	}
 
 	.habit-row {

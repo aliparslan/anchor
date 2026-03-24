@@ -104,41 +104,38 @@
 <PageHeader title="Settings" />
 
 <!-- Preferences -->
-<div class="home-section">
-	<SectionHeader title="Preferences">
-		{#if prefSaved}
-			<span class="saved-indicator">Saved</span>
-		{/if}
-	</SectionHeader>
-	<div class="pref-card">
-		<div class="pref-row">
-			<label class="pref-label" for="pref-name">Name</label>
-			<div class="pref-input-group">
-				<input id="pref-name" class="pref-input" type="text" bind:value={prefName} onblur={handlePrefBlur} />
-				<span class="pref-suffix pref-suffix-hidden">min</span>
-			</div>
+<SectionHeader title="Preferences">
+	{#if prefSaved}
+		<span class="saved-indicator">Saved</span>
+	{/if}
+</SectionHeader>
+<div class="pref-card">
+	<div class="pref-row">
+		<label class="pref-label" for="pref-name">Name</label>
+		<div class="pref-input-group">
+			<input id="pref-name" class="pref-input" type="text" bind:value={prefName} onblur={handlePrefBlur} />
+			<span class="pref-suffix pref-suffix-hidden">min</span>
 		</div>
-		<div class="pref-row">
-			<label class="pref-label" for="pref-pomo">Pomodoro</label>
-			<div class="pref-input-group">
-				<input id="pref-pomo" class="pref-input pref-input-num" type="number" min="1" max="120" bind:value={pomoDuration} onblur={handlePrefBlur} />
-				<span class="pref-suffix">min</span>
-			</div>
+	</div>
+	<div class="pref-row">
+		<label class="pref-label" for="pref-pomo">Pomodoro</label>
+		<div class="pref-input-group">
+			<input id="pref-pomo" class="pref-input pref-input-num" type="number" min="1" max="120" bind:value={pomoDuration} onblur={handlePrefBlur} />
+			<span class="pref-suffix">min</span>
 		</div>
-		<div class="pref-row">
-			<label class="pref-label" for="pref-focus">Focus goal</label>
-			<div class="pref-input-group">
-				<input id="pref-focus" class="pref-input pref-input-num" type="number" min="1" max="720" bind:value={focusGoal} onblur={handlePrefBlur} />
-				<span class="pref-suffix">min</span>
-			</div>
+	</div>
+	<div class="pref-row">
+		<label class="pref-label" for="pref-focus">Focus goal</label>
+		<div class="pref-input-group">
+			<input id="pref-focus" class="pref-input pref-input-num" type="number" min="1" max="720" bind:value={focusGoal} onblur={handlePrefBlur} />
+			<span class="pref-suffix">min</span>
 		</div>
 	</div>
 </div>
 
 <!-- RSS Feeds -->
-<div class="home-section">
-	<SectionHeader title="RSS Feeds" />
-	<div class="feed-card">
+<SectionHeader title="RSS Feeds" style="margin-top: var(--space-section)" />
+<div class="feed-card">
 		{#if feeds.length > 0}
 			<div class="feed-list">
 				{#each feeds as feed (feed.id)}
@@ -166,11 +163,9 @@
 			</button>
 		</form>
 	</div>
-</div>
 
 <!-- System -->
-<div class="home-section">
-	<SectionHeader title="System" />
+<SectionHeader title="System" style="margin-top: var(--space-section)" />
 	{#if system}
 		<div class="status-card">
 			<div class="status-card-header">
@@ -205,11 +200,9 @@
 	{:else}
 		<div class="empty">Loading...</div>
 	{/if}
-</div>
 
 <!-- Tailscale -->
-<div class="home-section">
-	<SectionHeader title="Network" />
+<SectionHeader title="Network" style="margin-top: var(--space-section)" />
 	{#if tailscale?.available}
 		<div class="status-card">
 			<div class="status-card-header">
@@ -236,8 +229,6 @@
 	{:else}
 		<div class="empty">Tailscale not available</div>
 	{/if}
-</div>
-
 
 {#if dashboardAge}
 	<div class="dashboard-age">

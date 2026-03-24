@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { onNavigate } from '$app/navigation';
+	import { fade } from 'svelte/transition';
 	import { initTheme } from '$lib/theme';
 	import QuickCaptureButton from '$lib/components/QuickCaptureButton.svelte';
 	import SearchOverlay from '$lib/components/SearchOverlay.svelte';
@@ -33,6 +35,16 @@
 
 	$effect(() => { initTheme(); });
 
+	onNavigate((navigation) => {
+		if (!document.startViewTransition) return;
+		return new Promise((resolve) => {
+			document.startViewTransition(async () => {
+				resolve();
+				await navigation.complete;
+			});
+		});
+	});
+
 	const tabs = [
 		{ href: '/', label: 'Home', icon: House },
 		{ href: '/feed/', label: 'Feed', icon: Newspaper },
@@ -55,8 +67,12 @@
 	<div class="offline-bar">offline</div>
 {/if}
 
-<div class="app" class:page-enter={pageReady}>
-	{@render children()}
+<div class="app">
+	{#key page.url.pathname}
+		<div in:fade={{ duration: 150, delay: 80 }} out:fade={{ duration: 80 }}>
+			{@render children()}
+		</div>
+	{/key}
 </div>
 
 <QuickCaptureButton bind:open={captureOpen} />

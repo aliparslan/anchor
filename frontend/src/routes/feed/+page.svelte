@@ -251,7 +251,7 @@
 
 	{#if loading}
 		<!-- Skeleton: HN -->
-		<div class="home-section">
+		<div>
 			<div class="section-header">
 				<span class="skel skel-inline" style="width: 120px; height: 14px"></span>
 				<div class="section-actions">
@@ -268,7 +268,7 @@
 			<div class="skel skel-expand"></div>
 		</div>
 		<!-- Skeleton: YouTube -->
-		<div class="home-section">
+		<div style="margin-top: var(--space-section)">
 			<div class="section-header">
 				<span class="skel skel-inline" style="width: 90px; height: 14px"></span>
 				<div class="section-actions">
@@ -288,7 +288,7 @@
 		</div>
 	{:else}
 		<!-- Hacker News -->
-		<div class="home-section section-hn">
+		<div class="section-hn">
 			<SectionHeader title="Hacker News">
 				<div class="section-actions">
 					{#if hnPosts.length > 0}
@@ -337,7 +337,7 @@
 		</div>
 
 		<!-- YouTube (daily batching) -->
-		<div class="home-section section-yt">
+		<div class="section-yt" style="margin-top: var(--space-section)">
 			<SectionHeader title="YouTube">
 				<div class="section-actions">
 					{#if ytVideos.length > 0}
@@ -397,7 +397,7 @@
 		</div>
 
 		<!-- Articles (RSS) -->
-		<div class="home-section">
+		<div style="margin-top: var(--space-section)">
 			<SectionHeader title="Articles">
 				<div class="section-actions">
 					<button class="refresh-btn" onclick={handleRssRefresh} disabled={rssRefreshing}>
@@ -443,7 +443,7 @@
 		</div>
 		<!-- Reading Queue -->
 		{#if queue.length > 0}
-			<div class="home-section">
+			<div style="margin-top: var(--space-section)">
 				<SectionHeader title="Queue">
 					<div class="section-actions">
 						<div class="queue-filters">
@@ -511,6 +511,7 @@
 	background: var(--card-bg);
 	border: 1px solid var(--border);
 	padding: 4px 14px;
+	margin-bottom: var(--space-widget);
 }
 
 .hn-item {

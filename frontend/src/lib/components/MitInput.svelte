@@ -62,6 +62,7 @@
     padding: var(--space-lg);
     border: 1px solid var(--border);
     background: var(--card-bg);
+    margin-bottom: var(--space-widget);
   }
 
   .mit-check {

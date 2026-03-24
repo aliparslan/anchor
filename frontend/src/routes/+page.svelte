@@ -211,23 +211,16 @@
 	<SectionHeader title="Priority" />
 	<MitInput />
 
-	<SectionHeader title="Focus" style="margin-top: var(--space-widget)" />
-	<div class="home-top">
-		<PomodoroTimer bind:totalMinutesToday={pomodoroMinutes} workDuration={pomoDuration} {focusGoal} />
-	</div>
+	<SectionHeader title="Focus" style="margin-top: var(--space-section)" />
+	<PomodoroTimer bind:totalMinutesToday={pomodoroMinutes} workDuration={pomoDuration} {focusGoal} />
 
-	<SectionHeader title="Journal" />
+	<SectionHeader title="Journal" style="margin-top: var(--space-section)" />
 	<JournalCard />
 
 	<Confetti trigger={showConfetti} />
 </div>
 
 <style>
-	/* Home page */
-	.home-top {
-		margin-bottom: var(--space-widget);
-	}
-
 	/* Weather */
 	.weather-line {
 		display: flex;
@@ -397,10 +390,5 @@
 	.fact-dismiss:hover {
 		background: var(--bg-hover);
 		color: var(--text);
-	}
-
-	/* Quiet hours — after 9pm, softer palette */
-	:global(.quiet-hours) :global(.greeting) {
-		opacity: 0.85;
 	}
 </style>

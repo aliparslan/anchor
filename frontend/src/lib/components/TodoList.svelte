@@ -85,6 +85,7 @@
 		border: 1px solid var(--border);
 		padding: 4px 0;
 		overflow: hidden;
+		margin-bottom: var(--space-widget);
 	}
 
 	/* Staggered entrance — only opacity, no transform (avoids flip conflict) */
