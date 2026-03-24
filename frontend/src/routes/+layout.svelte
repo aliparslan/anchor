@@ -5,6 +5,7 @@
 	import { initTheme } from '$lib/theme';
 	import QuickCaptureButton from '$lib/components/QuickCaptureButton.svelte';
 	import SearchOverlay from '$lib/components/SearchOverlay.svelte';
+	import ToastContainer from '$lib/components/ToastContainer.svelte';
 	import { House, Newspaper, NotePencil, ChartBar, ListChecks } from 'phosphor-svelte';
 	import '../app.css';
 	let { children } = $props();
@@ -65,8 +66,10 @@
 <SearchOverlay bind:open={showSearch} />
 
 {#if !online}
-	<div class="offline-bar">offline</div>
+	<div class="offline-bar">You're offline — cached data may be stale</div>
 {/if}
+
+<ToastContainer />
 
 <div class="app">
 	{#key page.url.pathname}

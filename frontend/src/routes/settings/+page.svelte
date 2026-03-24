@@ -10,6 +10,7 @@
 		type SystemStatus, type TailscaleStatus, type RssFeedConfig
 	} from '$lib/api';
 	import { getCached, setCached } from '$lib/cache';
+	import { showToast } from '$lib/toast.svelte';
 	import { Desktop, Globe, Circle, X, Plus } from 'phosphor-svelte';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import SectionHeader from '$lib/components/SectionHeader.svelte';
@@ -19,6 +20,7 @@
 	let system = $state<SystemStatus | null>(_c?.system ?? null);
 	let tailscale = $state<TailscaleStatus | null>(_c?.tailscale ?? null);
 	let dashboardAge = $state<{ days: number; since: string } | null>(_c?.dashboardAge ?? null);
+	let systemFailed = $state(false);
 
 	// Preferences
 	let prefName = $state('');
@@ -49,6 +51,7 @@
 	});
 
 	async function refresh() {
+		systemFailed = false;
 		const [s, t, age] = await Promise.all([
 			fetchSystemStatus().catch(() => null),
 			fetchTailscaleStatus().catch(() => null),
@@ -57,6 +60,7 @@
 		if (s) system = s;
 		if (t) tailscale = t;
 		if (age) dashboardAge = age;
+		if (!s && !system) systemFailed = true;
 	}
 
 	async function loadPreferences() {
@@ -92,7 +96,9 @@
 			if (ghSavedTimeout) clearTimeout(ghSavedTimeout);
 			ghSavedTimeout = setTimeout(() => { ghSaved = false; }, 2000);
 			ghContribs = await refreshGitHub();
-		} catch { /* no-op */ }
+		} catch {
+			showToast('Failed to save GitHub settings', 'error');
+		}
 	}
 
 	async function loadFeeds() {
@@ -111,7 +117,9 @@
 		try {
 			await savePreferences({ name: prefName, pomo_duration: pomoDuration, focus_goal: focusGoal });
 			flashSaved();
-		} catch { /* no-op */ }
+		} catch {
+			showToast('Failed to save preferences', 'error');
+		}
 	}
 
 	async function handleAddFeed() {
@@ -261,6 +269,8 @@
 	</form>
 </div>
 
+<div class="settings-divider"></div>
+
 <!-- System -->
 <SectionHeader title="System" style="margin-top: var(--space-section)" />
 	{#if system}
@@ -294,6 +304,8 @@
 				</div>
 			</div>
 		</div>
+	{:else if systemFailed}
+		<div class="empty">Couldn't load system info · <button class="retry-btn" onclick={refresh}>Retry</button></div>
 	{:else}
 		<div class="empty">Loading...</div>
 	{/if}
@@ -467,8 +479,8 @@
 		border: none;
 		background: none;
 		color: var(--text-secondary);
-		font-family: var(--font-mono);
-		font-size: 12px;
+		font-family: var(--font-sans);
+		font-size: 13px;
 		cursor: pointer;
 		text-align: left;
 		transition: color var(--ease-micro);
@@ -687,5 +699,11 @@
 		font-size: 11px;
 		color: var(--text-tertiary);
 		padding: 24px 0 8px;
+	}
+
+	.settings-divider {
+		height: 1px;
+		background: var(--border);
+		margin: var(--space-section) 0;
 	}
 </style>

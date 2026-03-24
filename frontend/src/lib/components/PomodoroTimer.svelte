@@ -155,7 +155,7 @@
 <div class="pomo-device">
 	<div class="pomo-screen">
 		<span class="pomo-session">Session {state.pomodorosCompleted + 1}</span>
-		<div class="pomo-time">{displayTime()}</div>
+		<div class="pomo-time" aria-label="Timer: {displayTime()}" role="timer">{displayTime()}</div>
 		<div class="pomo-screen-status">
 			<span class="pomo-status-label">{statusLabel[state.status]}</span>
 			<div class="pomo-dots">
@@ -313,7 +313,7 @@
 	}
 
 	.pomo-btn-label {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
 		font-size: 11px;
 		font-weight: 600;
 		text-transform: uppercase;

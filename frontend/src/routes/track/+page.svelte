@@ -12,12 +12,13 @@
 	import FocusHeatmap from '$lib/components/FocusHeatmap.svelte';
 	import WeeklyReview from '$lib/components/WeeklyReview.svelte';
 	import { focusLabel } from '$lib/utils';
-	import { getCached, setCached, clearCached } from '$lib/cache';
+	import { getCached, setCached } from '$lib/cache';
 	import { onDestroy } from 'svelte';
 	import { tweened } from 'svelte/motion';
 	import { cubicOut } from 'svelte/easing';
 	import { Check, X, Plus, PintGlass, CheckCircle } from 'phosphor-svelte';
 	import { tap, success } from '$lib/haptics';
+	import { showToast } from '$lib/toast.svelte';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import SectionHeader from '$lib/components/SectionHeader.svelte';
 
@@ -51,25 +52,30 @@
 	async function handleToggleWorkout() {
 		if (!habits) return;
 		tap();
-		const done = await toggleWorkout();
-		habits = { ...habits, workout: done ? 1 : 0 };
-		if (!done) workoutNote = '';
-		clearCached('home');
+		try {
+			const done = await toggleWorkout();
+			habits = { ...habits, workout: done ? 1 : 0 };
+			if (!done) workoutNote = '';
+			} catch {
+			showToast('Failed to update habit', 'error');
+		}
 	}
 
 	async function handleToggleNightRoutine() {
 		if (!habits) return;
 		tap();
-		const done = await toggleHabit('night_routine');
-		habits = { ...habits, night_routine: done };
-		clearCached('home');
+		try {
+			const done = await toggleHabit('night_routine');
+			habits = { ...habits, night_routine: done };
+			} catch {
+			showToast('Failed to update habit', 'error');
+		}
 	}
 
 	async function handleMoodSelect(n: number) {
 		mood = n;
 		await saveMood(n);
 		habits = await fetchHabitsToday();
-		clearCached('home');
 	}
 
 	function handleWorkoutNoteInput() {
@@ -82,12 +88,15 @@
 	async function handleToggleCustomHabit(name: string) {
 		if (!habits) return;
 		tap();
-		const done = await toggleHabit(name);
-		habits = {
-			...habits,
-			custom_habits: { ...habits.custom_habits, [name]: done }
-		};
-		clearCached('home');
+		try {
+			const done = await toggleHabit(name);
+			habits = {
+				...habits,
+				custom_habits: { ...habits.custom_habits, [name]: done }
+			};
+			} catch {
+			showToast('Failed to update habit', 'error');
+		}
 	}
 
 	async function handleAddCustomHabit() {
@@ -111,18 +120,9 @@
 	let waterCelebrated = $state(false);
 	let cupsContainer: HTMLDivElement;
 	let displayedGlasses = $state(_c?.waterGlasses ?? 0);
-	let glassStepTimer: ReturnType<typeof setTimeout> | null = null;
 
 	function animateGlasses(target: number) {
-		if (glassStepTimer) clearTimeout(glassStepTimer);
-		function step() {
-			if (displayedGlasses === target) return;
-			displayedGlasses += displayedGlasses < target ? 1 : -1;
-			if (displayedGlasses !== target) {
-				glassStepTimer = setTimeout(step, 100);
-			}
-		}
-		step();
+		displayedGlasses = target;
 	}
 
 	$effect(() => {
@@ -205,7 +205,6 @@
 
 	onDestroy(() => {
 		if (workoutNoteTimeout) clearTimeout(workoutNoteTimeout);
-		if (glassStepTimer) clearTimeout(glassStepTimer);
 		setCached('track', { habits, mood, streaks, weekData, customHabits, waterGlasses });
 	});
 </script>
@@ -214,49 +213,17 @@
 
 <p class="habits-date">{formatDate()}</p>
 
-<SectionHeader title="Mood" />
-<MoodSelector {mood} onselect={handleMoodSelect} />
-
-<SectionHeader title="Hydration" style="margin-top: var(--space-section)" />
-<div class="water-widget">
-	<div class="water-header">
-		<span class="water-ml" class:water-ml-complete={waterGlasses >= 8}>{Math.round($displayedMl).toLocaleString()}</span><span class="water-ml-total">/2,000</span><span class="water-ml-unit">ml</span>
-	</div>
-	<div class="water-cups" bind:this={cupsContainer}>
-		{#each Array(8) as _, i}
-			<button class="water-cup" class:water-cup-filled={i < displayedGlasses} onclick={() => handleWaterTap(i < waterGlasses && i === waterGlasses - 1 ? i : i + 1)} aria-label="Glass {i + 1}">
-				<PintGlass size={28} weight={i < displayedGlasses ? "fill" : "duotone"} />
-			</button>
+<SectionHeader title="Habits" />
+{#if !habits}
+	<div class="skel-habits">
+		{#each Array(5) as _, i}
+			<div class="skel-habit-row" class:skel-habit-last={i === 4}>
+				<div class="skel" style="width: 22px; height: 22px; border-radius: 50%"></div>
+				<div class="skel skel-line" style="width: {50 + (i % 3) * 15}%; height: 14px"></div>
+			</div>
 		{/each}
 	</div>
-	<button class="water-insights-toggle" onclick={toggleWaterInsights}>
-		{waterExpanded ? 'Hide' : 'View Hydration'}
-	</button>
-	{#if waterExpanded}
-		<div class="water-chart">
-			{#each waterWeek as day}
-				<div class="water-chart-col">
-					{#if day.glasses >= 8}
-						<div class="water-chart-check">
-							<CheckCircle size={14} weight="fill" />
-						</div>
-					{/if}
-					<div class="water-chart-bar-wrap">
-						<div class="water-chart-bar-bg"></div>
-						<div class="water-chart-bar" style="height: {Math.min(100, (day.glasses / 8) * 100)}%"></div>
-					</div>
-					<span class="water-chart-label">{new Date(day.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 3)}</span>
-				</div>
-			{/each}
-			{#if waterWeek.length === 0}
-				<span class="water-chart-empty">No data yet</span>
-			{/if}
-		</div>
-	{/if}
-</div>
-
-<SectionHeader title="Habits" style="margin-top: var(--space-section)" />
-{#if habits}
+{:else if habits}
 	<div class="habits-list">
 		<!-- Focus — auto -->
 		<div class="habit-row" class:habit-done={habits.focus_achieved}>
@@ -276,8 +243,7 @@
 		</div>
 
 		<!-- Workout — manual toggle -->
-		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-		<div class="habit-row" class:habit-done={habits.workout === 1} onclick={handleToggleWorkout}>
+		<div class="habit-row" class:habit-done={habits.workout === 1} onclick={handleToggleWorkout} onkeydown={(e) => e.key === 'Enter' && handleToggleWorkout()} role="button" tabindex="0">
 			<div class="habit-check" class:habit-check-done={habits.workout === 1}>
 				{#if habits.workout === 1}
 					<Check size={14} weight="bold" />
@@ -292,7 +258,6 @@
 		</div>
 
 		{#if habits.workout === 1}
-			<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 			<div class="workout-note-row" onclick={(e) => e.stopPropagation()}>
 				<input
 					type="text"
@@ -305,8 +270,7 @@
 		{/if}
 
 		<!-- Night Routine — manual toggle -->
-		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-		<div class="habit-row" class:habit-done={habits.night_routine} onclick={handleToggleNightRoutine}>
+		<div class="habit-row" class:habit-done={habits.night_routine} onclick={handleToggleNightRoutine} onkeydown={(e) => e.key === 'Enter' && handleToggleNightRoutine()} role="button" tabindex="0">
 			<div class="habit-check" class:habit-check-done={habits.night_routine}>
 				{#if habits.night_routine}
 					<Check size={14} weight="bold" />
@@ -354,8 +318,7 @@
 
 		<!-- Custom habits -->
 		{#each customHabits as ch, ci}
-			<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-			<div class="habit-row" class:habit-done={habits.custom_habits?.[ch.name]} class:habit-row-last={ci === customHabits.length - 1 && !showAddHabit} onclick={() => handleToggleCustomHabit(ch.name)}>
+			<div class="habit-row" class:habit-done={habits.custom_habits?.[ch.name]} class:habit-row-last={ci === customHabits.length - 1 && !showAddHabit} onclick={() => handleToggleCustomHabit(ch.name)} onkeydown={(e) => e.key === 'Enter' && handleToggleCustomHabit(ch.name)} role="button" tabindex="0">
 				<div class="habit-check" class:habit-check-done={habits.custom_habits?.[ch.name]}>
 					{#if habits.custom_habits?.[ch.name]}
 						<Check size={14} weight="bold" />
@@ -392,8 +355,7 @@
 				</form>
 			</div>
 		{:else}
-			<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-			<div class="habit-row habit-row-last habit-add-trigger" onclick={() => (showAddHabit = true)}>
+			<div class="habit-row habit-row-last habit-add-trigger" onclick={() => (showAddHabit = true)} onkeydown={(e) => e.key === 'Enter' && (showAddHabit = true)} role="button" tabindex="0">
 				<div class="habit-add-circle"></div>
 				<div class="habit-info">
 					<span class="habit-name habit-add-label">Add habit</span>
@@ -402,6 +364,47 @@
 		{/if}
 	</div>
 {/if}
+
+<SectionHeader title="Mood" style="margin-top: var(--space-section)" />
+<MoodSelector {mood} onselect={handleMoodSelect} />
+
+<SectionHeader title="Hydration" style="margin-top: var(--space-section)" />
+<div class="water-widget">
+	<div class="water-header">
+		<span class="water-ml" class:water-ml-complete={waterGlasses >= 8}>{Math.round($displayedMl).toLocaleString()}</span><span class="water-ml-total">/2,000</span><span class="water-ml-unit">ml</span>
+	</div>
+	<div class="water-cups" bind:this={cupsContainer}>
+		{#each Array(8) as _, i}
+			<button class="water-cup" class:water-cup-filled={i < displayedGlasses} onclick={() => handleWaterTap(i < waterGlasses && i === waterGlasses - 1 ? i : i + 1)} aria-label="Glass {i + 1}">
+				<PintGlass size={28} weight={i < displayedGlasses ? "fill" : "duotone"} />
+			</button>
+		{/each}
+	</div>
+	<button class="water-insights-toggle" onclick={toggleWaterInsights}>
+		{waterExpanded ? 'Hide' : 'View Hydration'}
+	</button>
+	{#if waterExpanded}
+		<div class="water-chart">
+			{#each waterWeek as day}
+				<div class="water-chart-col">
+					{#if day.glasses >= 8}
+						<div class="water-chart-check">
+							<CheckCircle size={14} weight="fill" />
+						</div>
+					{/if}
+					<div class="water-chart-bar-wrap">
+						<div class="water-chart-bar-bg"></div>
+						<div class="water-chart-bar" style="height: {Math.min(100, (day.glasses / 8) * 100)}%"></div>
+					</div>
+					<span class="water-chart-label">{new Date(day.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 3)}</span>
+				</div>
+			{/each}
+			{#if waterWeek.length === 0}
+				<span class="water-chart-empty">No data yet</span>
+			{/if}
+		</div>
+	{/if}
+</div>
 
 <SectionHeader title="Sleep" style="margin-top: var(--space-section)" />
 <SleepLogger />
@@ -416,8 +419,9 @@
 
 <style>
 	.habit-streak {
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
 		font-size: 11px;
+		font-weight: 500;
 		color: var(--text-tertiary);
 		margin-right: 4px;
 	}
@@ -628,7 +632,7 @@
 		background: none;
 		color: var(--border);
 		cursor: pointer;
-		transition: color var(--ease-micro), background var(--ease-micro);
+		transition: color 0.2s ease, background var(--ease-micro), transform 0.15s ease;
 		border-radius: var(--radius-sm);
 	}
 
@@ -822,9 +826,15 @@
 	}
 
 	.habit-auto-badge {
-		font-size: 11px;
+		font-size: 10px;
 		color: var(--text-tertiary);
-		font-family: var(--font-mono);
+		font-family: var(--font-sans);
+		font-weight: 500;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		padding: 2px 6px;
+		border-radius: var(--radius-sm);
+		background: var(--bg-secondary);
 	}
 
 	.insights-stack {
@@ -835,6 +845,26 @@
 
 	.insights-stack :global(> *) {
 		margin-bottom: 0;
+	}
+
+	.skel-habits {
+		border-radius: var(--radius-md);
+		background: var(--card-bg);
+		border: 1px solid var(--border);
+		padding: 4px 0;
+		margin-bottom: var(--space-widget);
+	}
+
+	.skel-habit-row {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		padding: 14px 16px;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.skel-habit-row.skel-habit-last {
+		border-bottom: none;
 	}
 
 </style>

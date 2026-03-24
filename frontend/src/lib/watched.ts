@@ -1,10 +1,12 @@
 const WATCHED_KEY = 'anchor:watched_videos';
 const READ_HN_KEY = 'anchor:read_hn';
 const READ_RSS_KEY = 'anchor:read_rss';
+const DISMISSED_KEY = 'anchor:dismissed_videos';
 
 let watchedCache: Set<string> | null = null;
 let readHnCache: Set<string> | null = null;
 let readRssCache: Set<string> | null = null;
+let dismissedCache: Set<string> | null = null;
 
 function loadSet(key: string): Set<string> {
 	try {
@@ -50,4 +52,20 @@ export function markRssRead(url: string) {
 	if (!readRssCache) readRssCache = loadSet(READ_RSS_KEY);
 	readRssCache.add(url);
 	saveSet(READ_RSS_KEY, readRssCache);
+}
+
+export function isDismissed(videoId: string): boolean {
+	if (!dismissedCache) dismissedCache = loadSet(DISMISSED_KEY);
+	return dismissedCache.has(videoId);
+}
+
+export function markDismissed(videoId: string) {
+	if (!dismissedCache) dismissedCache = loadSet(DISMISSED_KEY);
+	dismissedCache.add(videoId);
+	saveSet(DISMISSED_KEY, dismissedCache);
+}
+
+export function loadDismissedSet(): Set<string> {
+	if (!dismissedCache) dismissedCache = loadSet(DISMISSED_KEY);
+	return new Set(dismissedCache);
 }

@@ -1,11 +1,9 @@
 <script lang="ts">
 	import {
 		fetchPomodoroToday,
-		fetchWeather, setWeatherZip,
 		fetchVapidPublicKey, registerPushSubscription,
 		fetchPreferences,
-		type WeatherData
-	} from '$lib/api';
+		} from '$lib/api';
 	import { getCached, setCached } from '$lib/cache';
 	import { onDestroy } from 'svelte';
 	import PomodoroTimer from '$lib/components/PomodoroTimer.svelte';
@@ -16,10 +14,7 @@
 	import Confetti from '$lib/components/Confetti.svelte';
 	import facts from '$lib/facts.json';
 	import { localDate } from '$lib/utils';
-	import {
-		Moon, Sun, X, Lightbulb, CaretDown,
-		CloudSun, Cloud, CloudRain, CloudSnow, CloudLightning
-	} from 'phosphor-svelte';
+	import { X, Lightbulb } from 'phosphor-svelte';
 
 	// Restore from session cache if available (prevents re-fetch on tab switch)
 	const _c = getCached<any>('home');
@@ -38,74 +33,6 @@
 	const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
 	const dailyFact = facts[dayOfYear % facts.length];
 
-	let weather = $state<WeatherData | null>(_c?.weather ?? null);
-	let weatherLocation = $state(_c?.weatherLocation ?? '');
-	let weatherZip = $state<string | null>(_c?.weatherZip ?? null);
-	let showZipInput = $state(_c?.showZipInput ?? false);
-	let zipInput = $state('');
-	let forecastExpanded = $state(
-		typeof window !== 'undefined' ? localStorage.getItem('forecast_expanded') === 'true' : false
-	);
-
-	const weatherInfo: Record<number, { label: string; icon: string }> = {
-		0:  { label: 'Clear',         icon: 'sun' },
-		1:  { label: 'Mostly clear',  icon: 'sun' },
-		2:  { label: 'Partly cloudy', icon: 'cloud-sun' },
-		3:  { label: 'Overcast',      icon: 'cloud' },
-		45: { label: 'Foggy',         icon: 'cloud' },
-		48: { label: 'Rime fog',      icon: 'cloud' },
-		51: { label: 'Light drizzle', icon: 'rain' },
-		53: { label: 'Drizzle',       icon: 'rain' },
-		55: { label: 'Heavy drizzle', icon: 'rain' },
-		61: { label: 'Light rain',    icon: 'rain' },
-		63: { label: 'Rain',          icon: 'rain' },
-		65: { label: 'Heavy rain',    icon: 'rain' },
-		71: { label: 'Light snow',    icon: 'snow' },
-		73: { label: 'Snow',          icon: 'snow' },
-		75: { label: 'Heavy snow',    icon: 'snow' },
-		80: { label: 'Light showers', icon: 'rain' },
-		81: { label: 'Showers',       icon: 'rain' },
-		82: { label: 'Heavy showers', icon: 'rain' },
-		95: { label: 'Thunderstorm',  icon: 'storm' },
-		96: { label: 'Hail storm',    icon: 'storm' },
-		99: { label: 'Heavy hail',    icon: 'storm' },
-	};
-
-	function getWeatherLabel(code: number): string {
-		return weatherInfo[code]?.label || 'Unknown';
-	}
-
-	function getWeatherIcon(code: number): string {
-		return weatherInfo[code]?.icon || 'sun';
-	}
-
-	function toggleForecast() {
-		forecastExpanded = !forecastExpanded;
-		if (typeof window !== 'undefined') {
-			localStorage.setItem('forecast_expanded', String(forecastExpanded));
-		}
-	}
-
-	async function handleSetZip() {
-		if (!zipInput.trim()) return;
-		const data = await setWeatherZip(zipInput.trim());
-		if (data.weather) {
-			weather = data.weather;
-			weatherLocation = data.location;
-			weatherZip = data.zip_code;
-			showZipInput = false;
-		}
-	}
-
-	function isNighttime(): boolean {
-		const hour = new Date().getHours();
-		return hour >= 19 || hour < 6;
-	}
-
-	function isHourNighttime(timeStr: string): boolean {
-		const hour = new Date(timeStr).getHours();
-		return hour >= 19 || hour < 6;
-	}
 
 	function isQuietHours(): boolean {
 		return new Date().getHours() >= 21;
@@ -155,16 +82,15 @@
 		}
 	});
 
-	// Fetch data (skipped if restored from session cache)
-	$effect(() => {
-		// Always fetch preferences (not cached)
+	function doFetch() {
+		loading = true;
+		fetchError = false;
 		fetchPreferences().then((prefs) => {
 			userName = prefs.name;
 			pomoDuration = prefs.pomo_duration;
 			focusGoal = prefs.focus_goal;
 		}).catch(() => {});
 
-		if (_c) return;
 		setupPushNotifications();
 		fetchPomodoroToday()
 			.then((pomodoro) => {
@@ -174,26 +100,40 @@
 			.finally(() => {
 				loading = false;
 			});
+	}
+
+	function retryFetch() {
+		doFetch();
+	}
+
+	// Fetch data (skipped if restored from session cache)
+	$effect(() => {
+		if (_c) {
+			// Always fetch preferences even from cache
+			fetchPreferences().then((prefs) => {
+				userName = prefs.name;
+				pomoDuration = prefs.pomo_duration;
+				focusGoal = prefs.focus_goal;
+			}).catch(() => {});
+			return;
+		}
+		doFetch();
 	});
 
 	// Save state to session cache on destroy (persists across tab switches)
 	onDestroy(() => {
 		setCached('home', {
-			weather, weatherLocation, weatherZip, showZipInput,
 			pomodoroMinutes
 		});
 	});
 
-	const weatherIcon = $derived(weather ? getWeatherIcon(weather.weather_code) : 'sun');
 </script>
 
 <div class:quiet-hours={isQuietHours()}>
 	{#if fetchError}
-		<p class="fetch-error">Couldn't load some data</p>
+		<p class="fetch-error">Couldn't load some data · <button class="retry-btn" onclick={retryFetch}>Retry</button></p>
 	{/if}
 	<PageHeader title={getGreeting()} />
-
-	<!-- Weather widget hidden — code kept for potential re-enable -->
 
 	{#if !factDismissed}
 		<div class="fact-card">
@@ -212,7 +152,14 @@
 	<MitInput />
 
 	<SectionHeader title="Focus" style="margin-top: var(--space-section)" />
-	<PomodoroTimer bind:totalMinutesToday={pomodoroMinutes} workDuration={pomoDuration} {focusGoal} />
+	{#if loading}
+		<div class="skel-pomo">
+			<div class="skel skel-line" style="width: 60%; height: 48px; margin: 0 auto 12px"></div>
+			<div class="skel skel-line" style="width: 40%; height: 14px; margin: 0 auto"></div>
+		</div>
+	{:else}
+		<PomodoroTimer bind:totalMinutesToday={pomodoroMinutes} workDuration={pomoDuration} {focusGoal} />
+	{/if}
 
 	<SectionHeader title="Journal" style="margin-top: var(--space-section)" />
 	<JournalCard />
@@ -221,131 +168,6 @@
 </div>
 
 <style>
-	/* Weather */
-	.weather-line {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		margin-bottom: var(--space-widget);
-		flex-wrap: wrap;
-		font-family: var(--font-mono);
-		font-size: 12px;
-		font-weight: 400;
-		color: var(--text-secondary);
-		line-height: 2;
-		row-gap: 2px;
-	}
-
-	.weather-icon {
-		display: flex;
-		align-items: center;
-		color: var(--text-secondary);
-	}
-
-	.weather-sep {
-		color: var(--text-tertiary);
-	}
-
-	.weather-rain {
-		display: inline-flex;
-		align-items: center;
-		gap: 3px;
-		color: var(--color-blue);
-	}
-
-	.weather-location {
-		font-size: 12px;
-		color: var(--text-tertiary);
-		background: none;
-		border: none;
-		cursor: pointer;
-		font-family: inherit;
-		padding: 0;
-		margin-left: 4px;
-	}
-
-	.weather-location:hover {
-		color: var(--text-secondary);
-	}
-
-	.weather-zip-form {
-		display: flex;
-		gap: 8px;
-		margin-bottom: 20px;
-	}
-
-	.weather-zip-input {
-		padding: 6px 10px;
-		border: 1px solid var(--border);
-		border-radius: 6px;
-		background: var(--bg);
-		color: var(--text);
-		font-family: inherit;
-		font-size: 13px;
-		width: 160px;
-		outline: none;
-	}
-
-	.weather-zip-input:focus {
-		border-color: var(--accent);
-	}
-
-	.weather-zip-btn {
-		padding: 6px 14px;
-		border: 1px solid var(--border);
-		border-radius: 6px;
-		background: var(--bg);
-		color: var(--text-secondary);
-		font-family: inherit;
-		font-size: 13px;
-		cursor: pointer;
-		transition: all 0.15s ease;
-	}
-
-	.weather-zip-btn:hover {
-		background: var(--bg-hover);
-		color: var(--text);
-		border-color: var(--text-tertiary);
-	}
-
-	/* Expandable weather forecast */
-	.forecast-row {
-		display: flex;
-		gap: 8px;
-		margin-bottom: var(--space-widget);
-		animation: fadeSlideIn 0.2s ease;
-	}
-
-	.forecast-pill {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 4px;
-		padding: 8px 4px;
-		border-radius: 8px;
-		background: var(--card-bg);
-	}
-
-	.forecast-time {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		color: var(--text-tertiary);
-	}
-
-	.forecast-temp {
-		font-family: var(--font-mono);
-		font-size: 13px;
-		font-weight: 500;
-		color: var(--text);
-	}
-
-	@keyframes fadeSlideIn {
-		from { opacity: 0; transform: translateY(-4px); }
-		to { opacity: 1; transform: translateY(0); }
-	}
-
 	/* Daily fact card */
 	.fact-card {
 		display: flex;
@@ -390,5 +212,14 @@
 	.fact-dismiss:hover {
 		background: var(--bg-hover);
 		color: var(--text);
+	}
+
+	.skel-pomo {
+		border-radius: var(--radius-lg);
+		background: var(--card-bg);
+		border: 1px solid var(--border);
+		padding: 40px var(--space-lg);
+		margin-bottom: var(--space-widget);
+		text-align: center;
 	}
 </style>
