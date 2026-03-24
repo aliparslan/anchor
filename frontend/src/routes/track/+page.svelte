@@ -403,16 +403,16 @@
 	</div>
 {/if}
 
-<SectionHeader title="Sleep" />
+<SectionHeader title="Sleep" style="margin-top: var(--space-section)" />
 <SleepLogger />
 
 <SectionHeader title="Insights" style="margin-top: var(--space-section)" />
 
-<HabitWeekView data={weekData} />
-
-<FocusHeatmap />
-
-<WeeklyReview />
+<div class="insights-stack">
+	<HabitWeekView data={weekData} />
+	<FocusHeatmap />
+	<WeeklyReview />
+</div>
 
 <style>
 	.habit-streak {
@@ -825,6 +825,16 @@
 		font-size: 11px;
 		color: var(--text-tertiary);
 		font-family: var(--font-mono);
+	}
+
+	.insights-stack {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+	}
+
+	.insights-stack :global(> *) {
+		margin-bottom: 0;
 	}
 
 </style>
