@@ -160,7 +160,7 @@
 
   .heatmap-legend-label {
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 10px;
     color: var(--text-tertiary);
     margin: 0 2px;
   }

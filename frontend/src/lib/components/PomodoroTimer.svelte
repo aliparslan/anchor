@@ -208,6 +208,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-md);
+		margin-bottom: var(--space-widget);
 	}
 
 	.pomo-screen {

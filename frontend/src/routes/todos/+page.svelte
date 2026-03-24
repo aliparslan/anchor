@@ -7,12 +7,8 @@
 
 <PageHeader title="Todos" />
 
-<div class="home-section">
-	<SectionHeader title="Priority" />
-	<MitInput />
-</div>
+<SectionHeader title="Priority" />
+<MitInput />
 
-<div class="home-section">
-	<SectionHeader title="Tasks" />
-	<TodoList />
-</div>
+<SectionHeader title="Tasks" style="margin-top: var(--space-section)" />
+<TodoList />
