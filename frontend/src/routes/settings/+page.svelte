@@ -26,6 +26,7 @@
 
 	// RSS Feeds
 	let feeds = $state<RssFeedConfig[]>([]);
+	let feedsExpanded = $state(false);
 	let newFeedName = $state('');
 	let newFeedUrl = $state('');
 	let newFeedSiteUrl = $state('');
@@ -134,35 +135,41 @@
 </div>
 
 <!-- RSS Feeds -->
-<SectionHeader title="RSS Feeds" style="margin-top: var(--space-section)" />
+<SectionHeader title="RSS Feeds" style="margin-top: var(--space-section)">
+	{#if feeds.length > 0}
+		<span class="feed-count">{feeds.length} feeds</span>
+	{/if}
+</SectionHeader>
 <div class="feed-card">
-		{#if feeds.length > 0}
+	{#if feeds.length > 0}
+		<button class="feed-toggle" onclick={() => feedsExpanded = !feedsExpanded}>
+			{feedsExpanded ? 'Hide feeds' : `Manage ${feeds.length} feeds`}
+		</button>
+		{#if feedsExpanded}
 			<div class="feed-list">
 				{#each feeds as feed (feed.id)}
 					<div class="feed-row">
-						<div class="feed-info">
-							<span class="feed-name">{feed.name}</span>
-							<span class="feed-url">{feed.feed_url}</span>
-						</div>
+						<span class="feed-name">{feed.name}</span>
 						<button class="feed-delete" onclick={() => handleDeleteFeed(feed.id)} aria-label="Remove {feed.name}">
 							<X size={14} weight="bold" />
 						</button>
 					</div>
 				{/each}
 			</div>
-		{:else}
-			<div class="feed-empty">No feeds configured</div>
 		{/if}
-		<form class="feed-add-form" onsubmit={(e) => { e.preventDefault(); handleAddFeed(); }}>
-			<input class="feed-add-input" type="text" placeholder="Feed name" bind:value={newFeedName} />
-			<input class="feed-add-input" type="url" placeholder="Feed URL" bind:value={newFeedUrl} />
-			<input class="feed-add-input" type="url" placeholder="Site URL (optional)" bind:value={newFeedSiteUrl} />
-			<button type="submit" class="feed-add-btn" disabled={!newFeedName.trim() || !newFeedUrl.trim()}>
-				<Plus size={14} weight="bold" />
-				Add
-			</button>
-		</form>
-	</div>
+	{:else}
+		<div class="feed-empty">No feeds configured</div>
+	{/if}
+	<form class="feed-add-form" onsubmit={(e) => { e.preventDefault(); handleAddFeed(); }}>
+		<input class="feed-add-input" type="text" placeholder="Feed name" bind:value={newFeedName} />
+		<input class="feed-add-input" type="url" placeholder="Feed URL" bind:value={newFeedUrl} />
+		<input class="feed-add-input" type="url" placeholder="Site URL (optional)" bind:value={newFeedSiteUrl} />
+		<button type="submit" class="feed-add-btn" disabled={!newFeedName.trim() || !newFeedUrl.trim()}>
+			<Plus size={14} weight="bold" />
+			Add
+		</button>
+	</form>
+</div>
 
 <!-- System -->
 <SectionHeader title="System" style="margin-top: var(--space-section)" />
@@ -317,6 +324,31 @@
 		padding: 4px 0;
 	}
 
+	.feed-count {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		color: var(--text-tertiary);
+	}
+
+	.feed-toggle {
+		display: block;
+		width: 100%;
+		padding: 10px 14px;
+		border: none;
+		background: none;
+		color: var(--text-secondary);
+		font-family: var(--font-mono);
+		font-size: 12px;
+		cursor: pointer;
+		text-align: left;
+		transition: color var(--ease-micro);
+		border-bottom: 1px solid var(--border);
+	}
+
+	.feed-toggle:hover {
+		color: var(--text);
+	}
+
 	.feed-list {
 		display: flex;
 		flex-direction: column;
@@ -326,7 +358,7 @@
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		padding: 14px 14px;
+		padding: 10px 14px;
 		border-bottom: 1px solid var(--border);
 	}
 
@@ -334,28 +366,11 @@
 		border-bottom: none;
 	}
 
-	.feed-info {
-		flex: 1;
-		min-width: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-	}
-
 	.feed-name {
-		font-family: var(--font-display);
+		flex: 1;
+		font-family: var(--font-sans);
 		font-size: 13px;
-		font-weight: 500;
 		color: var(--text);
-	}
-
-	.feed-url {
-		font-family: var(--font-mono);
-		font-size: 11px;
-		color: var(--text-tertiary);
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
 	}
 
 	.feed-delete {
@@ -369,17 +384,20 @@
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
+		opacity: 0.5;
+		transition: all var(--ease-micro);
 	}
 
 	.feed-delete:hover {
 		color: var(--text);
+		opacity: 1;
 	}
 
 	.feed-empty {
 		font-family: var(--font-mono);
 		font-size: 12px;
 		color: var(--text-tertiary);
-		padding: 8px 14px;
+		padding: 10px 14px;
 	}
 
 	.feed-add-form {
