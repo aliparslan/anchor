@@ -98,11 +98,21 @@
   <div class="sleep-inputs">
     <div class="sleep-field">
       <label class="sleep-label">Bedtime</label>
-      <input type="time" class="sleep-time-input" bind:value={bedtime} onchange={handleChange} />
+      <div class="sleep-input-wrap">
+        <input type="time" class="sleep-time-input" class:sleep-time-empty={!bedtime} bind:value={bedtime} onchange={handleChange} />
+        {#if !bedtime}
+          <span class="sleep-time-placeholder">--:--</span>
+        {/if}
+      </div>
     </div>
     <div class="sleep-field">
       <label class="sleep-label">Wake up</label>
-      <input type="time" class="sleep-time-input" bind:value={wakeTime} onchange={handleChange} />
+      <div class="sleep-input-wrap">
+        <input type="time" class="sleep-time-input" class:sleep-time-empty={!wakeTime} bind:value={wakeTime} onchange={handleChange} />
+        {#if !wakeTime}
+          <span class="sleep-time-placeholder">--:--</span>
+        {/if}
+      </div>
     </div>
   </div>
   {#if sparklineHours.length >= 2}
@@ -177,6 +187,25 @@
     font-family: var(--font-display);
   }
 
+  .sleep-input-wrap {
+    position: relative;
+  }
+
+  .sleep-time-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--text-tertiary);
+    pointer-events: none;
+  }
+
   .sleep-time-input {
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
@@ -190,6 +219,10 @@
     appearance: none;
     width: 100%;
     transition: border-color 0.15s ease;
+  }
+
+  .sleep-time-empty {
+    color: transparent;
   }
 
   .sleep-time-input:focus {
