@@ -412,15 +412,16 @@
 		border: 1px solid var(--border);
 		border-radius: var(--radius-sm);
 		padding: 8px 10px;
-		background: var(--bg-inset);
+		background: var(--bg);
 		color: var(--text);
 		font-family: var(--font-sans);
 		font-size: 13px;
 		outline: none;
+		transition: border-color var(--ease-micro);
 	}
 
 	.feed-add-input:focus {
-		border-color: var(--accent);
+		border-color: var(--text-tertiary);
 	}
 
 	.feed-add-input::placeholder {
