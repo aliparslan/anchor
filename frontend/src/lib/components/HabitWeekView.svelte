@@ -73,8 +73,9 @@
 
 <style>
   .week-view {
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     background: var(--card-bg);
+    border: 1px solid var(--border);
     margin-bottom: var(--space-widget);
     overflow: hidden;
   }

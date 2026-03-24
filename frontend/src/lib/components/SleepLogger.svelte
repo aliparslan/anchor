@@ -131,9 +131,10 @@
 
 <style>
   .sleep-logger {
-    border-radius: 10px;
-    padding: 16px;
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
     background: var(--card-bg);
+    border: 1px solid var(--border);
     margin-bottom: var(--space-widget);
   }
 
@@ -178,7 +179,7 @@
 
   .sleep-time-input {
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     padding: 10px 12px;
     background: var(--card-bg);
     color: var(--text);

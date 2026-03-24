@@ -230,7 +230,7 @@
 
 	.todo-check-done .todo-dot {
 		transform: scale(1);
-		transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+		transition: transform var(--ease-spring);
 	}
 
 	/* === Text === */
@@ -288,6 +288,6 @@
 
 	.todo-hint-left {
 		right: 16px;
-		color: #ef4444;
+		color: var(--color-red);
 	}
 </style>

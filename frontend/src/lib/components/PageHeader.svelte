@@ -41,3 +41,82 @@
 </div>
 
 <ShutdownModal open={showShutdown} onclose={() => { showShutdown = false; refreshScore(); }} />
+
+<style>
+.page-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: var(--space-widget);
+}
+
+.greeting {
+	font-family: var(--font-display);
+	font-size: 32px;
+	font-weight: 600;
+	letter-spacing: -0.02em;
+}
+
+.page-header-actions {
+	display: flex;
+	align-items: center;
+	gap: var(--space-sm);
+}
+
+.theme-toggle {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border-radius: var(--radius-full);
+	border: 1px solid var(--border);
+	background: none;
+	color: var(--text-tertiary);
+	cursor: pointer;
+	transition: all var(--ease-micro);
+	flex-shrink: 0;
+	text-decoration: none;
+}
+
+.theme-toggle:hover {
+	background: var(--bg-hover);
+	color: var(--text);
+	border-color: var(--text-tertiary);
+}
+
+.theme-toggle:active {
+	transform: scale(0.9);
+}
+
+.score-ring {
+	position: relative;
+	width: 36px;
+	height: 36px;
+	flex-shrink: 0;
+}
+
+.score-ring-svg {
+	width: 100%;
+	height: 100%;
+	transform: rotate(-90deg);
+}
+
+.score-ring-text {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: var(--font-mono);
+	font-size: 10px;
+	font-weight: 500;
+	color: var(--text);
+}
+
+@media (max-width: 600px) {
+	.greeting {
+		font-size: 26px;
+	}
+}
+</style>

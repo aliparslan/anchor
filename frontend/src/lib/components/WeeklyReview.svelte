@@ -75,8 +75,9 @@
 
 <style>
   .weekly-review {
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     background: var(--card-bg);
+    border: 1px solid var(--border);
     overflow: hidden;
   }
 

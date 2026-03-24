@@ -77,7 +77,7 @@
 	width: 100%;
 	padding-bottom: 56.25%; /* 16:9 */
 	background: #000;
-	border-radius: 8px;
+	border-radius: var(--radius-md);
 	overflow: hidden;
 }
 

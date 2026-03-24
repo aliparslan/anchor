@@ -58,8 +58,8 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    border-radius: 10px;
-    padding: 14px 14px;
+    border-radius: var(--radius-md);
+    padding: var(--space-lg);
     border: 1px solid var(--border);
     background: var(--card-bg);
   }
@@ -90,7 +90,7 @@
     border-radius: 50%;
     background: var(--accent);
     transform: scale(0);
-    transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transition: transform var(--ease-spring);
     will-change: transform;
   }
 

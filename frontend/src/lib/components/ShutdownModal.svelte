@@ -110,12 +110,12 @@
 
   .shutdown-modal {
     background: var(--card-bg);
-    border-radius: 14px;
+    border-radius: var(--radius-lg);
     padding: 28px;
     max-width: 380px;
     width: 100%;
     animation: modalSlideUp 0.3s ease;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-elevated);
   }
 
   .shutdown-title {
@@ -180,7 +180,7 @@
   .shutdown-close-btn {
     width: 100%;
     padding: 12px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     border: none;
     background: var(--accent);
     color: var(--bg);

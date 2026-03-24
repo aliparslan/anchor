@@ -66,8 +66,9 @@
 
 <style>
   .heatmap-card {
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     background: var(--card-bg);
+    border: 1px solid var(--border);
     margin-bottom: var(--space-widget);
     overflow: hidden;
   }
@@ -128,7 +129,7 @@
 
   .heatmap-cell {
     aspect-ratio: 1;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     background: var(--bg-inset);
     transition: background 0.15s ease;
   }
