@@ -67,6 +67,11 @@ class FeedBody(BaseModel):
     site_url: str = Field(max_length=2000)
 
 
+class GitHubBody(BaseModel):
+    username: str = Field(max_length=200)
+    token: str = Field(default="", max_length=500)
+
+
 class GratitudeBody(BaseModel):
     text: str = Field(max_length=2000)
 
@@ -91,6 +96,24 @@ async def api_set_preferences(body: PreferencesBody):
     if body.focus_goal is not None:
         await save_setting("focus_goal", str(body.focus_goal))
     return await api_get_preferences()
+
+
+# --- GitHub ---
+
+
+@router.get("/api/settings/github")
+async def api_get_github():
+    username = await get_setting("github_username") or ""
+    token = await get_setting("github_token") or ""
+    return {"username": username, "connected": bool(token)}
+
+
+@router.put("/api/settings/github")
+async def api_set_github(body: GitHubBody):
+    await save_setting("github_username", body.username)
+    if body.token:
+        await save_setting("github_token", body.token)
+    return {"username": body.username, "connected": bool(body.token)}
 
 
 # --- Feeds ---

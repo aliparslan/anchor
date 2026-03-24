@@ -27,6 +27,7 @@ from db import (
 from hn import fetch_top_hn_posts
 from youtube import fetch_youtube_recommendations
 from rss import fetch_all_feeds
+from github import fetch_github_activity
 
 from routes.feed import router as feed_router
 from routes.journal import router as journal_router
@@ -104,9 +105,10 @@ async def scheduled_fetch(notify: bool = True):
         fetch_top_hn_posts(),
         fetch_youtube_recommendations(count=30),
         fetch_all_feeds(),
+        fetch_github_activity(),
         return_exceptions=True,
     )
-    for name, result in zip(["HN", "YouTube", "RSS"], results):
+    for name, result in zip(["HN", "YouTube", "RSS", "GitHub"], results):
         if isinstance(result, Exception):
             print(f"[Scheduler] {name} fetch failed: {result}")
     if notify:

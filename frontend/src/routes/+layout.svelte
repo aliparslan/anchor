@@ -34,6 +34,7 @@
 	}
 
 	$effect(() => { initTheme(); });
+	$effect(() => { page.url.pathname; captureOpen = false; });
 
 	onNavigate((navigation) => {
 		if (!document.startViewTransition) return;

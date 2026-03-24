@@ -189,6 +189,15 @@
 
   .sleep-input-wrap {
     position: relative;
+    height: 44px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--card-bg);
+    transition: border-color var(--ease-micro);
+  }
+
+  .sleep-input-wrap:focus-within {
+    border-color: var(--text-tertiary);
   }
 
   .sleep-time-placeholder {
@@ -199,7 +208,8 @@
     bottom: 0;
     display: flex;
     align-items: center;
-    padding: 10px 12px;
+    padding: 0 12px;
+    justify-content: center;
     font-family: var(--font-mono);
     font-size: 14px;
     color: var(--text-tertiary);
@@ -207,10 +217,13 @@
   }
 
   .sleep-time-input {
-    border: 1px solid var(--border);
+    position: absolute;
+    inset: 0;
+    border: none;
     border-radius: var(--radius-md);
-    padding: 10px 12px;
-    background: var(--card-bg);
+    padding: 0 12px;
+    text-align: center;
+    background: transparent;
     color: var(--text);
     font-family: var(--font-mono);
     font-size: 14px;
@@ -218,15 +231,12 @@
     -webkit-appearance: none;
     appearance: none;
     width: 100%;
-    transition: border-color 0.15s ease;
+    height: 100%;
   }
 
   .sleep-time-empty {
     color: transparent;
-  }
-
-  .sleep-time-input:focus {
-    border-color: var(--text-tertiary);
+    -webkit-text-fill-color: transparent;
   }
 
   :global([data-theme='dark']) .sleep-time-input {

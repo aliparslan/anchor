@@ -225,12 +225,14 @@
 		});
 	});
 
-	const visibleVideos = $derived(
-		ytVideos
-			.filter((v) => !dismissedSet.has(v.video_id))
-			.slice(0, ytRevealCount)
+	const nonDismissedVideos = $derived(
+		ytVideos.filter((v) => !dismissedSet.has(v.video_id))
 	);
-	const canRevealMoreYt = $derived(ytRevealCount < ytVideos.length);
+	const visibleVideos = $derived(
+		nonDismissedVideos.slice(0, ytRevealCount)
+	);
+	const canRevealMoreYt = $derived(ytRevealCount < nonDismissedVideos.length);
+	let ytExpanded = $state(false);
 	const displayedHn = $derived(hnExpanded ? hnPosts.slice(0, 10) : hnPosts.slice(0, 5));
 	const filteredRss = $derived(rssItems.filter(item => !dismissedRssIds.has(item.id)));
 	const displayedRss = $derived(rssExpanded ? filteredRss.slice(0, 20) : filteredRss.slice(0, 10));
@@ -390,7 +392,11 @@
 				</div>
 				{#if canRevealMoreYt}
 					<button class="expand-btn" onclick={handleYtRevealMore}>
-						Show more ({Math.min(10, ytVideos.length - ytRevealCount)} remaining)
+						Show more ({nonDismissedVideos.length - ytRevealCount} remaining)
+					</button>
+				{:else if ytRevealCount > 10}
+					<button class="expand-btn" onclick={() => { ytRevealCount = 10; saveYtRevealCount(10); }}>
+						Show less
 					</button>
 				{/if}
 			{/if}
