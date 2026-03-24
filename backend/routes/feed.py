@@ -15,10 +15,12 @@ from db import (
     delete_queue_item,
     delete_queue_item_by_hn_id,
     mark_queue_item_unread,
+    get_github_contributions,
 )
 from hn import fetch_top_hn_posts
 from youtube import fetch_youtube_recommendations
 from rss import fetch_all_feeds
+from github import fetch_github_activity
 
 router = APIRouter()
 
@@ -129,3 +131,18 @@ async def api_delete_queue_by_hn(hn_id: int):
 async def api_mark_queue_unread(item_id: int):
     await mark_queue_item_unread(item_id)
     return {"ok": True}
+
+
+# --- GitHub ---
+
+
+@router.get("/api/github/contributions")
+async def api_github_contributions():
+    data = await get_github_contributions()
+    return data or {"total": 0, "days": []}
+
+
+@router.post("/api/refresh/github")
+async def api_refresh_github():
+    data = await fetch_github_activity()
+    return data or {"total": 0, "days": []}

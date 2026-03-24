@@ -86,6 +86,11 @@ from db.todos import (
 
 from db.search import search_all
 
+from db.github import (
+    save_github_contributions,
+    get_github_contributions,
+)
+
 from db.stats import (
     FOCUS_GOAL_MINUTES,
     get_habits_week,

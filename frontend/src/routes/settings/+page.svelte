@@ -4,6 +4,9 @@
 		fetchDashboardAge,
 		fetchPreferences, savePreferences,
 		fetchFeedConfigs, addFeedConfig, deleteFeedConfig,
+		fetchGitHubSettings, saveGitHubSettings,
+		fetchGitHubContributions, refreshGitHub,
+		type GitHubContributions,
 		type SystemStatus, type TailscaleStatus, type RssFeedConfig
 	} from '$lib/api';
 	import { getCached, setCached } from '$lib/cache';
@@ -24,6 +27,14 @@
 	let prefSaved = $state(false);
 	let prefSavedTimeout: ReturnType<typeof setTimeout> | null = null;
 
+	// GitHub
+	let ghUsername = $state('');
+	let ghToken = $state('');
+	let ghConnected = $state(false);
+	let ghSaved = $state(false);
+	let ghSavedTimeout: ReturnType<typeof setTimeout> | null = null;
+	let ghContribs = $state<GitHubContributions | null>(null);
+
 	// RSS Feeds
 	let feeds = $state<RssFeedConfig[]>([]);
 	let feedsExpanded = $state(false);
@@ -34,6 +45,7 @@
 	onDestroy(() => {
 		setCached('status', { system, tailscale, dashboardAge });
 		if (prefSavedTimeout) clearTimeout(prefSavedTimeout);
+		if (ghSavedTimeout) clearTimeout(ghSavedTimeout);
 	});
 
 	async function refresh() {
@@ -53,6 +65,33 @@
 			prefName = prefs.name;
 			pomoDuration = prefs.pomo_duration;
 			focusGoal = prefs.focus_goal;
+		} catch { /* no-op */ }
+	}
+
+	async function loadGitHub() {
+		try {
+			const gh = await fetchGitHubSettings();
+			ghUsername = gh.username;
+			ghConnected = gh.connected;
+			if (gh.connected) {
+				ghContribs = await fetchGitHubContributions();
+				if (!ghContribs?.days?.length) {
+					ghContribs = await refreshGitHub();
+				}
+			}
+		} catch { /* no-op */ }
+	}
+
+	async function handleGitHubSave() {
+		if (!ghUsername.trim()) return;
+		try {
+			await saveGitHubSettings(ghUsername.trim(), ghToken);
+			ghConnected = true;
+			ghToken = '';
+			ghSaved = true;
+			if (ghSavedTimeout) clearTimeout(ghSavedTimeout);
+			ghSavedTimeout = setTimeout(() => { ghSaved = false; }, 2000);
+			ghContribs = await refreshGitHub();
 		} catch { /* no-op */ }
 	}
 
@@ -97,6 +136,7 @@
 		refresh();
 		loadPreferences();
 		loadFeeds();
+		loadGitHub();
 		const interval = setInterval(refresh, 30000);
 		return () => clearInterval(interval);
 	});
@@ -130,6 +170,56 @@
 		<div class="pref-input-group">
 			<input id="pref-focus" class="pref-input pref-input-num" type="number" min="1" max="720" bind:value={focusGoal} onblur={handlePrefBlur} />
 			<span class="pref-suffix">min</span>
+		</div>
+	</div>
+</div>
+
+<!-- GitHub -->
+<SectionHeader title="GitHub" style="margin-top: var(--space-section)">
+	{#if ghContribs?.days?.length}
+		<span class="saved-indicator">{ghContribs.days.filter(d => d.date.startsWith('2026')).reduce((s, d) => s + d.count, 0)} in 2026</span>
+	{/if}
+	{#if ghSaved}
+		<span class="saved-indicator">Saved</span>
+	{/if}
+</SectionHeader>
+{#if ghContribs?.days?.length}
+	{@const yearDays = ghContribs.days.filter(d => d.date.startsWith('2026'))}
+	{@const yearTotal = yearDays.reduce((s, d) => s + d.count, 0)}
+	{@const max = Math.max(...yearDays.map(d => d.count), 1)}
+	<div class="gh-heatmap-card">
+		<div class="gh-heatmap-scroll">
+			<svg class="gh-heatmap" viewBox="0 0 {Math.ceil(yearDays.length / 7) * 15 + 2} {7 * 15 + 2}">
+				{#each yearDays as day, i}
+					{@const week = Math.floor(i / 7)}
+					{@const dow = i % 7}
+					{@const intensity = day.count === 0 ? 0 : Math.ceil((day.count / max) * 4)}
+					<rect
+						x={week * 15 + 2}
+						y={dow * 15 + 2}
+						width="12"
+						height="12"
+						rx="2"
+						class="gh-cell gh-cell-{intensity}"
+					/>
+				{/each}
+			</svg>
+		</div>
+	</div>
+{/if}
+<div class="pref-card">
+	<div class="pref-row">
+		<label class="pref-label" for="gh-username">Username</label>
+		<div class="pref-input-group">
+			<input id="gh-username" class="pref-input" type="text" placeholder="username" bind:value={ghUsername} onblur={handleGitHubSave} />
+			<span class="pref-suffix pref-suffix-hidden">min</span>
+		</div>
+	</div>
+	<div class="pref-row">
+		<label class="pref-label" for="gh-token">Token</label>
+		<div class="pref-input-group">
+			<input id="gh-token" class="pref-input" type="password" placeholder={ghConnected ? '••••••••' : 'ghp_...'} bind:value={ghToken} onblur={handleGitHubSave} />
+			<span class="pref-suffix pref-suffix-hidden">min</span>
 		</div>
 	</div>
 </div>
@@ -244,6 +334,46 @@
 {/if}
 
 <style>
+	.gh-heatmap-card {
+		border-radius: var(--radius-md);
+		background: var(--card-bg);
+		border: 1px solid var(--border);
+		padding: 12px;
+		margin-bottom: 8px;
+		overflow: hidden;
+	}
+
+	.gh-heatmap-scroll {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.gh-heatmap {
+		display: block;
+		height: 107px;
+		min-width: 100%;
+	}
+
+	.gh-cell {
+		fill: var(--bg-inset, var(--bg-secondary));
+	}
+
+	.gh-cell-1 {
+		fill: color-mix(in srgb, var(--accent) 25%, transparent);
+	}
+
+	.gh-cell-2 {
+		fill: color-mix(in srgb, var(--accent) 50%, transparent);
+	}
+
+	.gh-cell-3 {
+		fill: color-mix(in srgb, var(--accent) 75%, transparent);
+	}
+
+	.gh-cell-4 {
+		fill: var(--accent);
+	}
+
 	.pref-card {
 		border-radius: var(--radius-md);
 		background: var(--card-bg);

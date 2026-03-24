@@ -21,6 +21,17 @@ export interface YoutubeVideo {
 	fetched_at: string;
 }
 
+export interface GitHubContribDay {
+	date: string;
+	count: number;
+}
+
+export interface GitHubContributions {
+	total: number;
+	days: GitHubContribDay[];
+	fetched_at?: string;
+}
+
 const BASE = '';
 
 async function apiFetch<T>(url: string, init?: RequestInit): Promise<T> {
@@ -459,6 +470,28 @@ export async function dismissRssItem(id: number): Promise<void> {
 export async function fetchDismissedRssIds(): Promise<number[]> {
 	const data = await apiFetch<{ dismissed: number[] }>(`${BASE}/api/rss/dismissed`);
 	return data.dismissed;
+}
+
+// --- GitHub ---
+
+export async function fetchGitHubContributions(): Promise<GitHubContributions> {
+	return apiFetch<GitHubContributions>(`${BASE}/api/github/contributions`);
+}
+
+export async function refreshGitHub(): Promise<GitHubContributions> {
+	return apiFetch<GitHubContributions>(`${BASE}/api/refresh/github`, { method: 'POST' });
+}
+
+export async function fetchGitHubSettings(): Promise<{ username: string; connected: boolean }> {
+	return apiFetch(`${BASE}/api/settings/github`);
+}
+
+export async function saveGitHubSettings(username: string, token: string): Promise<void> {
+	await apiFetch(`${BASE}/api/settings/github`, {
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ username, token })
+	});
 }
 
 // --- Status ---
