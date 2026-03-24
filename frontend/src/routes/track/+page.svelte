@@ -433,7 +433,7 @@
 	.workout-note-input {
 		width: 100%;
 		border: 1px solid var(--border);
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		padding: 8px 10px;
 		background: var(--bg);
 		color: var(--text);
@@ -455,7 +455,7 @@
 		flex-shrink: 0;
 		width: 24px;
 		height: 24px;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		border: none;
 		background: none;
 		color: var(--text-tertiary);
@@ -491,7 +491,7 @@
 		width: 20px;
 		height: 20px;
 		min-width: 20px;
-		border-radius: 50%;
+		border-radius: var(--radius-full);
 		border: 2px dashed var(--border);
 	}
 
@@ -529,7 +529,7 @@
 	.habit-add-submit {
 		padding: 6px 12px;
 		border: none;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		background: var(--accent);
 		color: var(--bg);
 		font-family: var(--font-sans);
@@ -547,7 +547,7 @@
 	.habit-add-cancel {
 		width: 24px;
 		height: 24px;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		border: none;
 		background: none;
 		color: var(--text-tertiary);
@@ -571,11 +571,11 @@
 	}
 
 	.water-widget {
-		border-radius: 10px;
-		padding: 16px;
+		border-radius: var(--radius-md);
+		padding: var(--space-lg);
 		background: var(--card-bg);
 		border: 1px solid var(--border);
-		margin-bottom: 20px;
+		margin-bottom: var(--space-widget);
 	}
 
 	.water-header {
@@ -595,7 +595,7 @@
 	}
 
 	.water-ml-complete {
-		color: #3b82f6;
+		color: var(--color-blue);
 	}
 
 	.water-ml-total {
@@ -630,8 +630,8 @@
 		background: none;
 		color: var(--border);
 		cursor: pointer;
-		transition: color 0.15s ease, background 0.15s ease;
-		border-radius: 6px;
+		transition: color var(--ease-micro), background var(--ease-micro);
+		border-radius: var(--radius-sm);
 	}
 
 	.water-cup:hover {
@@ -643,7 +643,7 @@
 	}
 
 	.water-cup-filled {
-		color: #3b82f6;
+		color: var(--color-blue);
 	}
 
 	.water-insights-toggle {
@@ -653,7 +653,7 @@
 		border: none;
 		border-top: 1px solid var(--border);
 		background: none;
-		color: #3b82f6;
+		color: var(--color-blue);
 		font-family: var(--font-sans);
 		font-size: 13px;
 		font-weight: 600;
@@ -684,7 +684,7 @@
 	}
 
 	.water-chart-check {
-		color: #3b82f6;
+		color: var(--color-blue);
 		flex-shrink: 0;
 	}
 
@@ -703,15 +703,15 @@
 		width: 70%;
 		max-width: 24px;
 		height: 100%;
-		background: rgba(59, 130, 246, 0.12);
-		border-radius: 4px;
+		background: color-mix(in srgb, var(--color-blue) 12%, transparent);
+		border-radius: var(--radius-sm);
 	}
 
 	.water-chart-bar {
 		width: 70%;
 		max-width: 24px;
-		background: #3b82f6;
-		border-radius: 4px;
+		background: var(--color-blue);
+		border-radius: var(--radius-sm);
 		min-height: 4px;
 		transition: height 0.3s ease;
 		position: relative;
@@ -743,7 +743,7 @@
 	}
 
 	.habits-list {
-		border-radius: 10px;
+		border-radius: var(--radius-md);
 		background: var(--card-bg);
 		border: 1px solid var(--border);
 		overflow: hidden;
@@ -776,7 +776,7 @@
 	.habit-check {
 		width: 22px;
 		height: 22px;
-		border-radius: 50%;
+		border-radius: var(--radius-full);
 		border: 2px solid var(--border);
 		display: flex;
 		align-items: center;

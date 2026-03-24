@@ -288,23 +288,14 @@
 <style>
 /* Journal — calm & minimal with dot calendar */
 .jrnl-card {
-	border-radius: 12px;
+	border-radius: var(--radius-md);
 	background: var(--card-bg);
 	border: 1px solid var(--border);
 	padding: 0;
-	box-shadow:
-		0 1px 2px rgba(0, 0, 0, 0.06),
-		0 4px 12px rgba(0, 0, 0, 0.04);
 	display: flex;
 	flex-direction: column;
 	margin-bottom: var(--space-section);
 	position: relative;
-}
-
-:global([data-theme='dark']) .jrnl-card {
-	box-shadow:
-		0 1px 2px rgba(0, 0, 0, 0.2),
-		0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* Hidden native date picker — positioned under the date label so iOS opens it there */
@@ -335,18 +326,17 @@
 	justify-content: center;
 	width: 28px;
 	height: 28px;
-	border-radius: 6px;
+	border-radius: var(--radius-sm);
 	border: none;
 	background: none;
 	color: var(--text-tertiary);
 	cursor: pointer;
-	transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+	transition: background var(--ease-micro), color var(--ease-micro), opacity var(--ease-micro);
 	-webkit-tap-highlight-color: transparent;
 }
 
-/* Hover persists on iOS after tap — acts as the "active" feedback */
 .jrnl-nav-arrow:hover {
-	background: var(--bg-secondary);
+	background: var(--bg-hover);
 	color: var(--text);
 }
 
@@ -358,15 +348,6 @@
 .jrnl-nav-arrow:disabled:hover {
 	background: none;
 	color: var(--text-tertiary);
-}
-
-:global([data-theme='dark']) .jrnl-nav-arrow {
-	color: var(--text-tertiary);
-}
-
-:global([data-theme='dark']) .jrnl-nav-arrow:hover {
-	background: var(--bg-hover);
-	color: var(--text);
 }
 
 /* Date label with inline saved dot */

@@ -200,32 +200,21 @@
 
 <style>
 	.pomo-device {
-		border-radius: 16px;
+		border-radius: var(--radius-lg);
 		background: var(--card-bg);
 		border: 1px solid var(--border);
-		padding: 14px;
-		box-shadow:
-			0 1px 0 rgba(0, 0, 0, 0.04),
-			0 4px 12px rgba(0, 0, 0, 0.06),
-			0 12px 24px rgba(0, 0, 0, 0.04);
+		padding: var(--space-lg);
+		box-shadow: var(--shadow-card);
 		display: flex;
 		flex-direction: column;
-		gap: 12px;
-	}
-
-	:global([data-theme='dark']) .pomo-device {
-		border-color: rgba(255, 255, 255, 0.06);
-		box-shadow:
-			0 1px 0 rgba(255, 255, 255, 0.03),
-			0 4px 12px rgba(0, 0, 0, 0.3),
-			0 12px 24px rgba(0, 0, 0, 0.2);
+		gap: var(--space-md);
 	}
 
 	.pomo-screen {
 		background: var(--bg-inset);
-		border-radius: 10px;
+		border-radius: var(--radius-md);
 		padding: 20px 16px 16px;
-		border: 1px solid rgba(0, 0, 0, 0.06);
+		border: 1px solid color-mix(in srgb, var(--text) 6%, transparent);
 		box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
 		display: flex;
 		flex-direction: column;
@@ -234,8 +223,6 @@
 	}
 
 	:global([data-theme='dark']) .pomo-screen {
-		background: var(--bg-inset);
-		border-color: rgba(0, 0, 0, 0.2);
 		box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
 	}
 
@@ -284,13 +271,9 @@
 	.pomo-dot {
 		width: 8px;
 		height: 8px;
-		border-radius: 50%;
-		background: rgba(0, 0, 0, 0.1);
+		border-radius: var(--radius-full);
+		background: color-mix(in srgb, var(--text) 10%, transparent);
 		transition: all 0.2s ease;
-	}
-
-	:global([data-theme='dark']) .pomo-dot {
-		background: rgba(255, 255, 255, 0.1);
 	}
 
 	.pomo-dot-filled {
@@ -316,15 +299,11 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 10px 14px;
-		border-radius: 10px;
+		border-radius: var(--radius-md);
 		border: 1px solid var(--border);
 		cursor: pointer;
 		transition: all 0.1s ease;
-		box-shadow: 0 2px 0 rgba(0, 0, 0, 0.1);
-	}
-
-	:global([data-theme='dark']) .pomo-btn {
-		box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3);
+		box-shadow: 0 2px 0 color-mix(in srgb, black 10%, transparent);
 	}
 
 	.pomo-btn:active {
@@ -350,11 +329,7 @@
 		background: var(--accent);
 		color: var(--bg);
 		border-color: var(--accent);
-		box-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
-	}
-
-	:global([data-theme='dark']) .pomo-btn-primary {
-		box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+		box-shadow: 0 2px 0 color-mix(in srgb, black 20%, transparent);
 	}
 
 	.pomo-btn-primary:hover {
@@ -364,11 +339,7 @@
 	.pomo-btn-active {
 		background: var(--text-secondary);
 		border-color: var(--text-secondary);
-		box-shadow: 0 2px 0 rgba(0, 0, 0, 0.15);
-	}
-
-	:global([data-theme='dark']) .pomo-btn-active {
-		box-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+		box-shadow: 0 2px 0 color-mix(in srgb, black 15%, transparent);
 	}
 
 	.pomo-btn-secondary {
@@ -402,13 +373,9 @@
 	.pomo-grille-dot {
 		width: 5px;
 		height: 5px;
-		border-radius: 50%;
-		background: rgba(0, 0, 0, 0.08);
+		border-radius: var(--radius-full);
+		background: color-mix(in srgb, var(--text) 8%, transparent);
 		transition: background 0.2s ease;
-	}
-
-	:global([data-theme='dark']) .pomo-grille-dot {
-		background: rgba(255, 255, 255, 0.08);
 	}
 
 	.pomo-grille-dot-filled {

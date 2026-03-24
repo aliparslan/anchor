@@ -49,7 +49,7 @@
   .mood-circle {
     width: 48px;
     height: 48px;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     border: 2px solid var(--border);
     background: var(--bg-secondary);
     cursor: pointer;

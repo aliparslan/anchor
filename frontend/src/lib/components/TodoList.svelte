@@ -80,7 +80,7 @@
 
 <style>
 	.todo-list {
-		border-radius: 10px;
+		border-radius: var(--radius-md);
 		background: var(--card-bg);
 		border: 1px solid var(--border);
 		padding: 4px 0;

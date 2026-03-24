@@ -82,21 +82,13 @@
     z-index: 99;
     background: var(--card-bg);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     padding: 12px 14px;
-    box-shadow:
-      0 4px 24px rgba(0, 0, 0, 0.12),
-      0 1px 4px rgba(0, 0, 0, 0.06);
+    box-shadow: var(--shadow-elevated);
     animation: captureSlideUp 0.2s ease;
     display: flex;
     flex-direction: column;
     gap: 8px;
-  }
-
-  :global([data-theme='dark']) .capture-panel {
-    box-shadow:
-      0 4px 24px rgba(0, 0, 0, 0.4),
-      0 1px 4px rgba(0, 0, 0, 0.2);
   }
 
   .capture-label {
@@ -132,7 +124,7 @@
   .capture-send {
     width: 32px;
     height: 32px;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     border: none;
     background: var(--accent);
     color: var(--bg);

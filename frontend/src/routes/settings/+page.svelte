@@ -219,14 +219,14 @@
 			<div class="status-device-list">
 				{#if tailscale.self}
 					<div class="status-device-row">
-						<Circle size={8} weight="fill" color="#22c55e" />
+						<Circle size={8} weight="fill" color="var(--color-green)" />
 						<span class="status-device-name">{tailscale.self.hostname}</span>
 						<span class="status-device-meta">this device · {tailscale.self.ip}</span>
 					</div>
 				{/if}
 				{#each tailscale.peers ?? [] as peer}
 					<div class="status-device-row">
-						<Circle size={8} weight="fill" color={peer.online ? '#22c55e' : 'var(--text-tertiary)'} />
+						<Circle size={8} weight="fill" color={peer.online ? 'var(--color-green)' : 'var(--text-tertiary)'} />
 						<span class="status-device-name">{peer.hostname}</span>
 						<span class="status-device-meta">{peer.os}{peer.online ? ` · ${peer.ip}` : ' · offline'}</span>
 					</div>
@@ -247,18 +247,18 @@
 
 <style>
 	.pref-card {
-		border-radius: 10px;
+		border-radius: var(--radius-md);
 		background: var(--card-bg);
 		border: 1px solid var(--border);
-		padding: 4px 14px;
+		padding: 4px 0;
 	}
 
 	.pref-row {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 12px;
-		padding: 14px 0;
+		gap: var(--space-md);
+		padding: 14px 14px;
 		border-bottom: 1px solid var(--border);
 	}
 
@@ -320,10 +320,10 @@
 	}
 
 	.feed-card {
-		border-radius: 10px;
+		border-radius: var(--radius-md);
 		background: var(--card-bg);
 		border: 1px solid var(--border);
-		padding: 4px 14px;
+		padding: 4px 0;
 	}
 
 	.feed-list {
@@ -335,7 +335,7 @@
 		display: flex;
 		align-items: center;
 		gap: 8px;
-		padding: 14px 0;
+		padding: 14px 14px;
 		border-bottom: 1px solid var(--border);
 	}
 
@@ -373,7 +373,7 @@
 		color: var(--text-tertiary);
 		cursor: pointer;
 		padding: 4px;
-		border-radius: 4px;
+		border-radius: var(--radius-sm);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -388,20 +388,20 @@
 		font-family: var(--font-mono);
 		font-size: 12px;
 		color: var(--text-tertiary);
-		padding: 8px 0;
+		padding: 8px 14px;
 	}
 
 	.feed-add-form {
 		display: flex;
 		flex-direction: column;
 		gap: 8px;
-		padding: 12px 0 14px;
+		padding: 12px 14px 14px;
 		border-top: 1px solid var(--border);
 	}
 
 	.feed-add-input {
 		border: 1px solid var(--border);
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		padding: 8px 10px;
 		background: var(--bg-inset);
 		color: var(--text);
@@ -425,7 +425,7 @@
 		gap: 4px;
 		padding: 6px 12px;
 		border: none;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		background: var(--accent);
 		color: var(--bg);
 		font-family: var(--font-sans);
@@ -442,9 +442,10 @@
 
 	/* System */
 	.status-card {
-		border-radius: 10px;
-		padding: 16px;
+		border-radius: var(--radius-md);
+		padding: var(--space-lg);
 		background: var(--card-bg);
+		border: 1px solid var(--border);
 	}
 
 	.status-card-header {
@@ -494,14 +495,14 @@
 	.status-bar-track {
 		flex: 1;
 		height: 6px;
-		border-radius: 3px;
+		border-radius: var(--radius-sm);
 		background: var(--bg-inset);
 		overflow: hidden;
 	}
 
 	.status-bar-fill {
 		height: 100%;
-		border-radius: 3px;
+		border-radius: var(--radius-sm);
 		background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 70%, white));
 		transition: width 0.5s ease;
 	}

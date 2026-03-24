@@ -139,14 +139,14 @@
 
 	.search-modal {
 		background: var(--card-bg);
-		border-radius: 12px;
+		border-radius: var(--radius-md);
 		width: 100%;
 		max-width: 480px;
 		max-height: 70vh;
 		overflow: hidden;
 		display: flex;
 		flex-direction: column;
-		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+		box-shadow: var(--shadow-elevated);
 	}
 
 	.search-input-row {
@@ -179,8 +179,8 @@
 		cursor: pointer;
 		padding: 4px;
 		display: flex;
-		border-radius: 4px;
-		transition: all 0.15s;
+		border-radius: var(--radius-sm);
+		transition: all var(--ease-micro);
 	}
 
 	.search-close:hover {
@@ -220,7 +220,7 @@
 		flex-direction: column;
 		gap: 2px;
 		padding: 8px;
-		border-radius: 6px;
+		border-radius: var(--radius-sm);
 		transition: background 0.1s ease;
 		cursor: default;
 	}
