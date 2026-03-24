@@ -9,8 +9,9 @@
 		type HnPost, type YoutubeVideo, type RssItem, type ReadingQueueItem
 	} from '$lib/api';
 	import { timeAgo, localDate } from '$lib/utils';
-	import { isWatched, markWatched, isHnRead, markHnRead, isRssRead, markRssRead } from '$lib/watched';
-	import { getCached, setCached, clearCached } from '$lib/cache';
+	import { showToast } from '$lib/toast.svelte';
+	import { isWatched, markWatched, isHnRead, markHnRead, isRssRead, markRssRead, markDismissed, loadDismissedSet } from '$lib/watched';
+	import { getCached, setCached } from '$lib/cache';
 	import { onDestroy } from 'svelte';
 	import VideoPlayer from '$lib/components/VideoPlayer.svelte';
 	import { Moon, Sun, ArrowClockwise, BookmarkSimple, X, Check, Eye, EyeSlash } from 'phosphor-svelte';
@@ -76,6 +77,7 @@
 	function handleDismiss(e: MouseEvent, videoId: string) {
 		e.stopPropagation();
 		dismissedSet = new Set([...dismissedSet, videoId]);
+		markDismissed(videoId);
 		dismissVideoServer(videoId);
 	}
 
@@ -88,22 +90,27 @@
 	async function handleBookmark(e: MouseEvent, post: HnPost) {
 		e.preventDefault();
 		e.stopPropagation();
-		if (savedHnIds.has(post.hn_id)) {
-			await deleteQueueItemByHnId(post.hn_id);
-			const next = new Set(savedHnIds);
-			next.delete(post.hn_id);
-			savedHnIds = next;
-		} else {
-			await saveToReadingQueue({ hn_id: post.hn_id, title: post.title, url: post.url || post.hn_url, domain: post.domain });
-			savedHnIds = new Set([...savedHnIds, post.hn_id]);
+		try {
+			if (savedHnIds.has(post.hn_id)) {
+				await deleteQueueItemByHnId(post.hn_id);
+				const next = new Set(savedHnIds);
+				next.delete(post.hn_id);
+				savedHnIds = next;
+			} else {
+				await saveToReadingQueue({ hn_id: post.hn_id, title: post.title, url: post.url || post.hn_url, domain: post.domain });
+				savedHnIds = new Set([...savedHnIds, post.hn_id]);
+			}
+			queue = await fetchReadingQueue();
+		} catch {
+			showToast('Failed to update bookmark', 'error');
 		}
-		queue = await fetchReadingQueue();
 	}
 
 	function syncState(posts: HnPost[], videos: YoutubeVideo[], dismissed: string[]) {
 		readHnSet = new Set(posts.filter((p) => isHnRead(String(p.hn_id))).map((p) => String(p.hn_id)));
 		watchedSet = new Set(videos.filter((v) => isWatched(v.video_id)).map((v) => v.video_id));
-		dismissedSet = new Set(dismissed);
+		const localDismissed = loadDismissedSet();
+		dismissedSet = new Set([...dismissed, ...localDismissed]);
 		readRssUrls = new Set(rssItems.filter((item) => isRssRead(item.url)).map((item) => item.url));
 	}
 
@@ -186,9 +193,9 @@
 		}
 	}
 
-	// Fetch data (skipped if restored from session cache)
-	$effect(() => {
-		if (_c) return;
+	function doFetch() {
+		loading = true;
+		fetchError = false;
 		Promise.all([
 			fetchHnPosts(),
 			fetchYoutubeVideos(),
@@ -214,6 +221,16 @@
 			.finally(() => {
 				loading = false;
 			});
+	}
+
+	function retryFetch() {
+		doFetch();
+	}
+
+	// Fetch data (skipped if restored from session cache)
+	$effect(() => {
+		if (_c) return;
+		doFetch();
 	});
 
 	// Save state to session cache on destroy (persists across tab switches)
@@ -247,7 +264,7 @@
 
 <div>
 	{#if fetchError}
-		<p class="fetch-error">Couldn't load feed</p>
+		<p class="fetch-error">Couldn't load feed · <button class="retry-btn" onclick={retryFetch}>Retry</button></p>
 	{/if}
 	<PageHeader title="Feed" />
 
@@ -363,12 +380,15 @@
 			{:else}
 				<div class="yt-grid">
 					{#each visibleVideos as video, vi}
-						<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 						<div
 							class="yt-card stagger-in"
 							class:watched={watchedSet.has(video.video_id)}
 							style="animation-delay: {vi * 40}ms"
 							onclick={() => playVideo(video.video_id)}
+							onkeydown={(e) => e.key === "Enter" && playVideo(video.video_id)}
+							role="button"
+							tabindex="0"
+							aria-label="Play {video.title}"
 						>
 							<div class="yt-thumb-container">
 								{#if video.thumbnail}
@@ -585,7 +605,7 @@
 
 /* HN read state */
 .hn-item.read {
-	opacity: 0.45;
+	opacity: 0.55;
 }
 
 .hn-item.read:hover {
@@ -711,7 +731,7 @@
 
 /* Watched state */
 .yt-card.watched {
-	opacity: 0.45;
+	opacity: 0.55;
 }
 
 .yt-card.watched:hover {
@@ -758,8 +778,8 @@
 	border: none;
 	background: var(--bg-secondary);
 	color: var(--text-tertiary);
-	font-family: var(--font-mono);
-	font-size: 10px;
+	font-family: var(--font-sans);
+	font-size: 11px;
 	font-weight: 500;
 	cursor: pointer;
 	transition: all 0.15s ease;

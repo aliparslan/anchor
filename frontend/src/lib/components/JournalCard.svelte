@@ -523,11 +523,11 @@
 }
 
 .jrnl-entries-drawer-open {
-	max-height: 280px;
+	max-height: 400px;
 }
 
 .jrnl-entries-list {
-	max-height: 280px;
+	max-height: 400px;
 	overflow-y: auto;
 	display: flex;
 	flex-direction: column;

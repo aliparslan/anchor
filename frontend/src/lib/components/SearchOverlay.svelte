@@ -55,7 +55,7 @@
 
 {#if open}
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="search-overlay" onclick={close}>
+	<div class="search-overlay" onclick={close} role="dialog" aria-label="Search">
 		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 		<div class="search-modal" onclick={(e) => e.stopPropagation()}>
 			<div class="search-input-row">
