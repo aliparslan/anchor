@@ -6,6 +6,7 @@
 		fetchFeedConfigs, addFeedConfig, deleteFeedConfig,
 		fetchGitHubSettings, saveGitHubSettings,
 		fetchGitHubContributions, refreshGitHub,
+		fetchYouTubeCookieStatus, saveYouTubeCookies,
 		type GitHubContributions,
 		type SystemStatus, type TailscaleStatus, type RssFeedConfig
 	} from '$lib/api';
@@ -37,6 +38,13 @@
 	let ghSavedTimeout: ReturnType<typeof setTimeout> | null = null;
 	let ghContribs = $state<GitHubContributions | null>(null);
 
+	// YouTube Cookies
+	let ytHasCookies = $state(false);
+	let ytLineCount = $state(0);
+	let ytCookieText = $state('');
+	let ytSaved = $state(false);
+	let ytSavedTimeout: ReturnType<typeof setTimeout> | null = null;
+
 	// RSS Feeds
 	let feeds = $state<RssFeedConfig[]>([]);
 	let feedsExpanded = $state(false);
@@ -48,6 +56,7 @@
 		setCached('status', { system, tailscale, dashboardAge });
 		if (prefSavedTimeout) clearTimeout(prefSavedTimeout);
 		if (ghSavedTimeout) clearTimeout(ghSavedTimeout);
+		if (ytSavedTimeout) clearTimeout(ytSavedTimeout);
 	});
 
 	async function refresh() {
@@ -101,6 +110,29 @@
 		}
 	}
 
+	async function loadYouTubeCookies() {
+		try {
+			const status = await fetchYouTubeCookieStatus();
+			ytHasCookies = status.has_cookies;
+			ytLineCount = status.line_count;
+		} catch { /* no-op */ }
+	}
+
+	async function handleYouTubeCookieSave() {
+		if (!ytCookieText.trim()) return;
+		try {
+			const status = await saveYouTubeCookies(ytCookieText.trim());
+			ytHasCookies = status.has_cookies;
+			ytLineCount = status.line_count;
+			ytCookieText = '';
+			ytSaved = true;
+			if (ytSavedTimeout) clearTimeout(ytSavedTimeout);
+			ytSavedTimeout = setTimeout(() => { ytSaved = false; }, 2000);
+		} catch {
+			showToast('Failed to save YouTube cookies', 'error');
+		}
+	}
+
 	async function loadFeeds() {
 		try {
 			feeds = await fetchFeedConfigs();
@@ -145,6 +177,7 @@
 		loadPreferences();
 		loadFeeds();
 		loadGitHub();
+		loadYouTubeCookies();
 		const interval = setInterval(refresh, 30000);
 		return () => clearInterval(interval);
 	});
@@ -229,6 +262,30 @@
 			<input id="gh-token" class="pref-input" type="password" placeholder={ghConnected ? '••••••••' : 'ghp_...'} bind:value={ghToken} onblur={handleGitHubSave} />
 			<span class="pref-suffix pref-suffix-hidden">min</span>
 		</div>
+	</div>
+</div>
+
+<!-- YouTube -->
+<SectionHeader title="YouTube" style="margin-top: var(--space-section)">
+	{#if ytSaved}<span class="saved-indicator">Saved</span>{/if}
+</SectionHeader>
+<div class="pref-card">
+	<div class="pref-row" style="flex-direction: column; align-items: stretch; gap: 8px;">
+		<div style="display: flex; justify-content: space-between; align-items: center;">
+			<label class="pref-label">Cookies</label>
+			{#if ytHasCookies}
+				<span class="yt-status yt-status-ok">{ytLineCount} cookies loaded</span>
+			{:else}
+				<span class="yt-status">No cookies</span>
+			{/if}
+		</div>
+		<textarea
+			class="pref-input yt-cookie-input"
+			placeholder="Paste Netscape-format cookies here..."
+			rows="4"
+			bind:value={ytCookieText}
+		></textarea>
+		<button class="yt-save-btn" disabled={!ytCookieText.trim()} onclick={handleYouTubeCookieSave}>Save cookies</button>
 	</div>
 </div>
 
@@ -344,6 +401,8 @@
 		This dashboard has been alive for {dashboardAge.days} {dashboardAge.days === 1 ? 'day' : 'days'}
 	</div>
 {/if}
+
+<div class="app-version">v0.2.0</div>
 
 <style>
 	.gh-heatmap-card {
@@ -705,5 +764,55 @@
 		height: 1px;
 		background: var(--border);
 		margin: var(--space-section) 0;
+	}
+
+	.app-version {
+		text-align: center;
+		font-size: 0.7rem;
+		font-family: var(--font-mono);
+		color: var(--text-tertiary);
+		margin-top: 8px;
+		padding-bottom: 4px;
+	}
+
+	.yt-cookie-input {
+		font-family: var(--font-mono);
+		font-size: 0.75rem;
+		resize: vertical;
+		min-height: 80px;
+		background: var(--bg);
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		padding: 10px;
+		color: var(--text);
+	}
+
+	.yt-save-btn {
+		align-self: flex-end;
+		padding: 6px 16px;
+		font-size: 0.8rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		border-radius: 8px;
+		border: 1px solid var(--border);
+		background: var(--card-bg);
+		color: var(--text);
+		cursor: pointer;
+		opacity: 0.9;
+	}
+
+	.yt-save-btn:disabled {
+		opacity: 0.3;
+		cursor: default;
+	}
+
+	.yt-status {
+		font-size: 0.75rem;
+		font-family: var(--font-mono);
+		color: var(--text-muted);
+	}
+
+	.yt-status-ok {
+		color: var(--accent);
 	}
 </style>

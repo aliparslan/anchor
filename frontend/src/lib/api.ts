@@ -494,6 +494,20 @@ export async function saveGitHubSettings(username: string, token: string): Promi
 	});
 }
 
+// --- YouTube Cookies ---
+
+export async function fetchYouTubeCookieStatus(): Promise<{ has_cookies: boolean; line_count: number }> {
+	return apiFetch(`${BASE}/api/settings/youtube-cookies`);
+}
+
+export async function saveYouTubeCookies(cookies: string): Promise<{ has_cookies: boolean; line_count: number }> {
+	return apiFetch(`${BASE}/api/settings/youtube-cookies`, {
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ cookies })
+	});
+}
+
 // --- Status ---
 
 export interface SystemStatus {

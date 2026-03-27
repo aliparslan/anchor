@@ -116,6 +116,31 @@ async def api_set_github(body: GitHubBody):
     return {"username": body.username, "connected": bool(body.token)}
 
 
+# --- YouTube Cookies ---
+
+COOKIES_FILE = Path(__file__).parent.parent.parent / "data" / "yt_cookies.txt"
+
+
+class YouTubeCookiesBody(BaseModel):
+    cookies: str
+
+
+@router.get("/api/settings/youtube-cookies")
+async def api_get_youtube_cookies():
+    if COOKIES_FILE.exists():
+        text = COOKIES_FILE.read_text()
+        lines = [l for l in text.strip().splitlines() if l.strip() and not l.startswith("# ")]
+        return {"has_cookies": True, "line_count": len(lines)}
+    return {"has_cookies": False, "line_count": 0}
+
+
+@router.put("/api/settings/youtube-cookies")
+async def api_set_youtube_cookies(body: YouTubeCookiesBody):
+    COOKIES_FILE.parent.mkdir(parents=True, exist_ok=True)
+    COOKIES_FILE.write_text(body.cookies)
+    return await api_get_youtube_cookies()
+
+
 # --- Feeds ---
 
 
