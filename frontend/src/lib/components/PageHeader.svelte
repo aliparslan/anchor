@@ -16,8 +16,7 @@
 	<h1 class="greeting">{title}</h1>
 	<div class="page-header-actions">
 		{#if dailyScore !== null}
-			<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-			<div class="score-ring" title="{dailyScore.score}/100 — tap for details" onclick={() => showShutdown = true} style="cursor: pointer">
+			<div class="score-ring" title="{dailyScore.score}/100 — tap for details" onclick={() => showShutdown = true} onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showShutdown = true; }}} role="button" tabindex="0" style="cursor: pointer">
 				<svg viewBox="0 0 36 36" class="score-ring-svg">
 					<circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--border)" stroke-width="3" />
 					<circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--accent)" stroke-width="3"

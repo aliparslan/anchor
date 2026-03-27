@@ -1,10 +1,13 @@
 <script lang="ts">
   import { fetchWeeklyReview, type WeeklyReview } from '$lib/api';
+  import MiniBarChart from './charts/MiniBarChart.svelte';
 
   let review = $state<WeeklyReview | null>(null);
   let expanded = $state(new Date().getDay() === 0);
 
   const moodColors = ['', '#e04545', '#e68a3a', '#c4a06a', '#3b82f6', '#22c55e'];
+  const moodLabels = ['', 'Awful', 'Low', 'Okay', 'Good', 'Great'];
+  const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
   function refresh() {
     fetchWeeklyReview().then((data) => (review = data));
@@ -16,6 +19,13 @@
   }
 
   $effect(() => { refresh(); });
+
+  const focusBarData = $derived(
+    review?.focus_per_day?.map((hours, i) => ({
+      label: dayLabels[i] || '',
+      value: hours,
+    })) ?? []
+  );
 </script>
 
 <div class="weekly-review">
@@ -28,47 +38,56 @@
   </button>
   {#if expanded && review}
     <div class="weekly-content">
-      <div class="weekly-stat">
-        <span class="weekly-stat-value">{review.focus_hours}h</span>
-        <span class="weekly-stat-label">Focus</span>
-      </div>
-      <div class="weekly-stat">
-        <span class="weekly-stat-value">{review.habit_rate.completed}/{review.habit_rate.total}</span>
-        <span class="weekly-stat-label">Habits</span>
-      </div>
-      <div class="weekly-stat">
-        <span class="weekly-stat-value">{review.mit_rate.completed}/{review.mit_rate.total}</span>
-        <span class="weekly-stat-label">MITs done</span>
-      </div>
-      {#if review.avg_sleep_hours !== null}
+      <div class="weekly-stats">
         <div class="weekly-stat">
-          <span class="weekly-stat-value">{review.avg_sleep_hours}h</span>
-          <span class="weekly-stat-label">Avg sleep</span>
+          <span class="weekly-stat-value">{review.focus_hours}h</span>
+          <span class="weekly-stat-label">Focus</span>
+        </div>
+        <div class="weekly-stat">
+          <span class="weekly-stat-value">{review.habit_rate.completed}/{review.habit_rate.total}</span>
+          <span class="weekly-stat-label">Habits</span>
+        </div>
+        <div class="weekly-stat">
+          <span class="weekly-stat-value">{review.mit_rate.completed}/{review.mit_rate.total}</span>
+          <span class="weekly-stat-label">MITs done</span>
+        </div>
+        {#if review.avg_sleep_hours !== null}
+          <div class="weekly-stat">
+            <span class="weekly-stat-value">{review.avg_sleep_hours}h</span>
+            <span class="weekly-stat-label">Avg sleep</span>
+          </div>
+        {/if}
+      </div>
+
+      {#if review.focus_per_day}
+        <div class="weekly-chart-section">
+          <span class="weekly-chart-label">Daily focus</span>
+          <MiniBarChart
+            data={focusBarData}
+            max={6}
+            height={72}
+            goalLine={4}
+            formatValue={(v) => `${v.toFixed(1)}h`}
+          />
         </div>
       {/if}
-      <div class="weekly-mood-row">
-        <span class="weekly-stat-label">Mood</span>
-        <div class="weekly-mood-dots">
-          {#each review.mood_trend as m}
-            <span
-              class="weekly-mood-dot"
-              style={m ? `background: ${moodColors[m]}; border-color: ${moodColors[m]}` : ''}
-            ></span>
+
+      <div class="weekly-chart-section">
+        <span class="weekly-chart-label">Mood</span>
+        <div class="weekly-mood-row">
+          {#each review.mood_trend as m, i}
+            <div class="weekly-mood-col">
+              <span
+                class="weekly-mood-dot"
+                class:weekly-mood-dot-empty={!m}
+                style={m ? `background: ${moodColors[m]}; border-color: ${moodColors[m]}` : ''}
+                title={m ? moodLabels[m] : 'No data'}
+              ></span>
+              <span class="weekly-mood-day">{dayLabels[i]}</span>
+            </div>
           {/each}
         </div>
       </div>
-      {#if review.focus_per_day}
-        <div class="weekly-focus-row">
-          <span class="weekly-stat-label">Focus</span>
-          <div class="weekly-focus-bars">
-            {#each review.focus_per_day as hours}
-              <div class="weekly-focus-bar-container">
-                <div class="weekly-focus-bar" style="height: {Math.min(100, (hours / 4) * 100)}%"></div>
-              </div>
-            {/each}
-          </div>
-        </div>
-      {/if}
     </div>
   {/if}
 </div>
@@ -117,10 +136,16 @@
 
   .weekly-content {
     padding: 0 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    animation: fadeSlideIn 0.3s ease;
+  }
+
+  .weekly-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
     gap: 12px;
-    animation: fadeSlideIn 0.3s ease;
   }
 
   .weekly-stat {
@@ -142,55 +167,51 @@
     font-family: var(--font-display);
   }
 
-  .weekly-mood-row {
-    grid-column: 1 / -1;
+  .weekly-chart-section {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 8px;
   }
 
-  .weekly-mood-dots {
+  .weekly-chart-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .weekly-mood-row {
     display: flex;
-    gap: 6px;
+    justify-content: space-between;
+    gap: 4px;
+  }
+
+  .weekly-mood-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
   }
 
   .weekly-mood-dot {
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
     border: 1.5px solid var(--border);
     background: var(--bg-inset);
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
   }
 
-  .weekly-focus-row {
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  .weekly-mood-dot-empty {
+    opacity: 0.4;
   }
 
-  .weekly-focus-bars {
-    display: flex;
-    gap: 6px;
-    flex: 1;
-    align-items: flex-end;
-    height: 40px;
-  }
-
-  .weekly-focus-bar-container {
-    flex: 1;
-    height: 100%;
-    display: flex;
-    align-items: flex-end;
-  }
-
-  .weekly-focus-bar {
-    width: 100%;
-    border-radius: 3px 3px 0 0;
-    background: var(--accent);
-    min-height: 2px;
-    transition: height 0.3s ease;
+  .weekly-mood-day {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-tertiary);
   }
 
   @keyframes fadeSlideIn {

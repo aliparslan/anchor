@@ -73,7 +73,7 @@
 
 <div class="app">
 	{#key page.url.pathname}
-		<div in:fade={{ duration: 150, delay: 80 }} out:fade={{ duration: 80 }}>
+		<div in:fade={{ duration: 100, delay: 30 }} out:fade={{ duration: 60 }}>
 			{@render children()}
 		</div>
 	{/key}

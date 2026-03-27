@@ -139,11 +139,12 @@
   }
 
   .heatmap-low {
-    background: color-mix(in srgb, var(--accent) 30%, var(--bg-inset));
+    background: color-mix(in srgb, var(--accent) 25%, var(--bg-inset));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 15%, transparent);
   }
 
   .heatmap-mid {
-    background: color-mix(in srgb, var(--accent) 60%, var(--bg-inset));
+    background: color-mix(in srgb, var(--accent) 55%, var(--bg-inset));
   }
 
   .heatmap-high {

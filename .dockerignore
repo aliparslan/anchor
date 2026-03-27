@@ -1,0 +1,11 @@
+data/
+.git/
+*.md
+frontend/node_modules/
+frontend/.svelte-kit/
+frontend/build/
+backend/__pycache__/
+backend/.venv/
+**/*.pyc
+.DS_Store
+docs/

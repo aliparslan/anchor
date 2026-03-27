@@ -100,7 +100,7 @@
     position: fixed;
     inset: 0;
     z-index: 200;
-    background: rgba(0, 0, 0, 0.6);
+    background: color-mix(in srgb, var(--text) 60%, transparent);
     display: flex;
     align-items: center;
     justify-content: center;

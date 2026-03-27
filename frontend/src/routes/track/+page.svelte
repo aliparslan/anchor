@@ -11,12 +11,13 @@
 	import HabitWeekView from '$lib/components/HabitWeekView.svelte';
 	import FocusHeatmap from '$lib/components/FocusHeatmap.svelte';
 	import WeeklyReview from '$lib/components/WeeklyReview.svelte';
+	import MiniBarChart from '$lib/components/charts/MiniBarChart.svelte';
 	import { focusLabel } from '$lib/utils';
 	import { getCached, setCached } from '$lib/cache';
 	import { onDestroy } from 'svelte';
 	import { tweened } from 'svelte/motion';
 	import { cubicOut } from 'svelte/easing';
-	import { Check, X, Plus, PintGlass, CheckCircle } from 'phosphor-svelte';
+	import { Check, X, Plus, PintGlass } from 'phosphor-svelte';
 	import { tap, success } from '$lib/haptics';
 	import { showToast } from '$lib/toast.svelte';
 	import PageHeader from '$lib/components/PageHeader.svelte';
@@ -168,6 +169,13 @@
 			waterWeek = await fetchWaterWeek();
 		}
 	}
+
+	const waterBarData = $derived(
+		waterWeek.map((day) => ({
+			label: new Date(day.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 3),
+			value: day.glasses,
+		}))
+	);
 
 	async function handleDeleteCustomHabit(id: number, name: string) {
 		await deleteCustomHabit(id);
@@ -385,21 +393,16 @@
 	</button>
 	{#if waterExpanded}
 		<div class="water-chart">
-			{#each waterWeek as day}
-				<div class="water-chart-col">
-					{#if day.glasses >= 8}
-						<div class="water-chart-check">
-							<CheckCircle size={14} weight="fill" />
-						</div>
-					{/if}
-					<div class="water-chart-bar-wrap">
-						<div class="water-chart-bar-bg"></div>
-						<div class="water-chart-bar" style="height: {Math.min(100, (day.glasses / 8) * 100)}%"></div>
-					</div>
-					<span class="water-chart-label">{new Date(day.date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 3)}</span>
-				</div>
-			{/each}
-			{#if waterWeek.length === 0}
+			{#if waterWeek.length > 0}
+				<MiniBarChart
+					data={waterBarData}
+					max={10}
+					height={96}
+					color="var(--color-blue)"
+					goalLine={8}
+					formatValue={(v) => `${v}`}
+				/>
+			{:else}
 				<span class="water-chart-empty">No data yet</span>
 			{/if}
 		</div>
@@ -668,66 +671,11 @@
 	}
 
 	.water-chart {
-		display: flex;
-		justify-content: space-around;
-		align-items: flex-end;
-		gap: 6px;
 		padding: 16px 0 4px;
-		height: 140px;
-	}
-
-	.water-chart-col {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 4px;
-		height: 100%;
-	}
-
-	.water-chart-check {
-		color: var(--color-blue);
-		flex-shrink: 0;
-	}
-
-	.water-chart-bar-wrap {
-		flex: 1;
-		width: 100%;
-		display: flex;
-		align-items: flex-end;
-		justify-content: center;
-		position: relative;
-	}
-
-	.water-chart-bar-bg {
-		position: absolute;
-		bottom: 0;
-		width: 70%;
-		max-width: 24px;
-		height: 100%;
-		background: color-mix(in srgb, var(--color-blue) 12%, transparent);
-		border-radius: var(--radius-sm);
-	}
-
-	.water-chart-bar {
-		width: 70%;
-		max-width: 24px;
-		background: var(--color-blue);
-		border-radius: var(--radius-sm);
-		min-height: 4px;
-		transition: height 0.3s ease;
-		position: relative;
-		z-index: 1;
-	}
-
-	.water-chart-label {
-		font-family: var(--font-mono);
-		font-size: 10px;
-		color: var(--text-tertiary);
-		flex-shrink: 0;
 	}
 
 	.water-chart-empty {
+		font-family: var(--font-mono);
 		font-size: 13px;
 		color: var(--text-tertiary);
 		text-align: center;

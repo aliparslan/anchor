@@ -3,6 +3,7 @@
   import { formatDuration } from '$lib/format';
   import { onDestroy } from 'svelte';
   import { createAutoSave } from '$lib/autoSave.svelte';
+  import MiniLineChart from './charts/MiniLineChart.svelte';
 
   let bedtime = $state('');
   let wakeTime = $state('');
@@ -46,51 +47,21 @@
 
   const duration = $derived(computeDuration());
 
-  // Sparkline data: hours of sleep per day
-  const sparklineHours = $derived(
-    weekData.map((d) => {
-      if (!d.bedtime || !d.wake_time) return 0;
-      return durationMinutes(d.bedtime, d.wake_time) / 60;
-    })
+  function formatDateLabel(dateStr: string): string {
+    return new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  }
+
+  const chartData = $derived(
+    weekData.map((d) => ({
+      label: formatDateLabel(d.date),
+      value: d.bedtime && d.wake_time ? durationMinutes(d.bedtime, d.wake_time) / 60 : 0,
+    }))
   );
-
-  const sparklinePath = $derived.by(() => {
-    if (sparklineHours.length < 2) return '';
-    const vals = sparklineHours;
-    const max = Math.max(...vals, 10);
-    const min = Math.min(...vals.filter(v => v > 0), 0);
-    const range = max - min || 1;
-    const w = 280;
-    const h = 48;
-    const pad = 4;
-    const points = vals.map((v, i) => {
-      const x = pad + (i / (vals.length - 1)) * (w - pad * 2);
-      const y = h - pad - ((v - min) / range) * (h - pad * 2);
-      return `${x},${y}`;
-    });
-    return points.join(' ');
-  });
-
-  const sparklineDots = $derived.by(() => {
-    if (sparklineHours.length < 2) return [];
-    const vals = sparklineHours;
-    const max = Math.max(...vals, 10);
-    const min = Math.min(...vals.filter(v => v > 0), 0);
-    const range = max - min || 1;
-    const w = 280;
-    const h = 48;
-    const pad = 4;
-    return vals.map((v, i) => ({
-      x: pad + (i / (vals.length - 1)) * (w - pad * 2),
-      y: h - pad - ((v - min) / range) * (h - pad * 2),
-      value: v
-    }));
-  });
 </script>
 
 <div class="sleep-logger">
   <div class="sleep-header">
-    <span class="sleep-title">Sleep <span class="sleep-range-label">Last 30 days</span></span>
+    <span class="sleep-title">Sleep <span class="sleep-range-label">Last 7 days</span></span>
     {#if duration}
       <span class="sleep-duration">{duration}</span>
     {/if}
@@ -115,22 +86,15 @@
       </div>
     </div>
   </div>
-  {#if sparklineHours.length >= 2}
+  {#if chartData.length >= 2}
     <div class="sleep-chart-container">
-      <svg class="sleep-chart" viewBox="0 0 280 48">
-        <polyline points={sparklinePath} fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-        {#each sparklineDots as dot}
-          {#if dot.value > 0}
-            <circle cx={dot.x} cy={dot.y} r="2.5" fill="var(--accent)" />
-          {/if}
-        {/each}
-      </svg>
-      <div class="sleep-chart-labels">
-        {#if weekData.length > 0}
-          <span class="sleep-chart-day">{new Date(weekData[0].date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-          <span class="sleep-chart-day" style="margin-left: auto">{new Date(weekData[weekData.length - 1].date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
-        {/if}
-      </div>
+      <MiniLineChart
+        data={chartData}
+        height={56}
+        yMin={4}
+        yMax={10}
+        formatValue={(v) => `${v.toFixed(1)}h`}
+      />
     </div>
   {:else if weekData.length > 0}
     <div class="sleep-chart-container">
@@ -247,23 +211,6 @@
     margin-top: 14px;
     padding-top: 12px;
     border-top: 1px solid var(--border);
-  }
-
-  .sleep-chart {
-    width: 100%;
-    height: 48px;
-  }
-
-  .sleep-chart-labels {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 4px;
-  }
-
-  .sleep-chart-day {
-    font-family: var(--font-mono);
-    font-size: 9px;
-    color: var(--text-tertiary);
   }
 
   .sleep-range-label {
