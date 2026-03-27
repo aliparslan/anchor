@@ -1,6 +1,6 @@
 # Anchor
 
-Personal dashboard PWA for focus, habits, and content. Built for one user (me), runs off my laptop, accessed from my phone over Tailscale. Design inspired by Linear and Notion — calm, minimal, grayscale, every pixel earns its space.
+Personal dashboard PWA for focus, habits, and content. Built for one user (me), designed to be accessed from my phone. Design inspired by Linear and Notion — calm, minimal, grayscale, every pixel earns its space.
 
 ## Features
 
@@ -20,33 +20,86 @@ Requires [uv](https://docs.astral.sh/uv/) and [bun](https://bun.sh/).
 
 ```bash
 make dev          # run backend + frontend
-make build        # build frontend
-make run          # production server
-make run-https    # production with HTTPS (needs mkcert certs)
+make build        # build frontend for production
+make run          # production server (HTTP)
 ```
 
 Database auto-creates at `data/base.db` on first run.
 
-## How I run it
+## Deploy to Fly.io
 
-The backend runs on my laptop at home. I use [Tailscale](https://tailscale.com/) to access it from my phone over a private network — no port forwarding, no public server.
+The easiest way to run Anchor on your phone without keeping a laptop on. Fly handles HTTPS, so no mkcert or cert management needed. Costs under $1/month with auto-stop, or ~$2/month always-on.
+
+### First-time setup
+
+1. Install the [Fly CLI](https://fly.io/docs/flyctl/install/) and sign up:
+
+```bash
+brew install flyctl
+fly auth signup
+```
+
+2. Pick a unique app name, update `app` in `fly.toml` to match, then create the app and a 1GB persistent volume:
+
+```bash
+fly apps create your-app-name
+fly volumes create anchor_data --region dfw --size 1
+```
+
+3. Build the frontend locally and deploy:
+
+```bash
+make build
+fly deploy
+```
+
+Your app is live at `https://your-app-name.fly.dev`.
+
+### Subsequent deploys
+
+```bash
+make build && fly deploy
+```
+
+### Optional: YouTube cookies
+
+YouTube scraping requires browser cookies. Upload them to the volume:
+
+```bash
+fly ssh console
+cat > /data/yt_cookies.txt << 'EOF'
+(paste Netscape-format cookies here)
+EOF
+```
+
+### Optional: GitHub contributions
+
+Enter your GitHub username and personal access token in the Settings page. Stored in the database, persists across deploys.
+
+### Auto-stop behavior
+
+By default, the machine stops when idle and starts on the first request (~1-2s cold start). This keeps costs near zero. Content is fetched fresh on each startup.
+
+To keep the machine always on (so the 8am/6pm scheduled fetches and push notifications work reliably), set `min_machines_running = 1` in `fly.toml`.
 
 ### Adding it as an app on iPhone
 
-1. Open the app URL in Safari (e.g. `https://100.x.x.x:8443`)
-2. Tap the share button → "Add to Home Screen"
+1. Open `https://your-app-name.fly.dev` in Safari
+2. Tap the share button -> "Add to Home Screen"
 3. It launches as a full-screen app with no browser chrome
 
-### Push notifications
+## Alternative: run locally with Tailscale
 
-Push notifications require HTTPS. Here's how to set it up:
+If you'd rather run it off your own machine, install [Tailscale](https://tailscale.com/) on your laptop and phone. The backend runs on your laptop and is accessible over Tailscale's private network — no port forwarding, no public server.
 
-1. Install [mkcert](https://github.com/FiloSottile/mkcert) and run `mkcert -install` to create a local CA
+Push notifications over Tailscale require HTTPS, which means generating local certs:
+
+1. Install [mkcert](https://github.com/FiloSottile/mkcert) and run `mkcert -install`
 2. Generate certs: `mkcert your-tailscale-ip` and move them to `backend/cert.crt` and `backend/cert.key`
-3. On your iPhone, AirDrop yourself the root CA file from `$(mkcert -CAROOT)/rootCA.pem`
-4. Install the profile in Settings → General → VPN & Device Management, then trust it in Settings → General → About → Certificate Trust Settings
-5. Run `make build && make run-https`
-6. Open the app and enable notifications when prompted — VAPID keys are auto-generated on first run
+3. On iPhone, AirDrop the root CA from `$(mkcert -CAROOT)/rootCA.pem`, install and trust it in Settings
+4. Run `make build && make run-https`
+
+The downside: the app is only available when your laptop is on.
 
 ## License
 

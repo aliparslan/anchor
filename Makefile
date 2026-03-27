@@ -1,3 +1,5 @@
+BUN := $(shell which bun)
+
 .PHONY: dev dev-backend dev-frontend build run clean
 
 # Development: run backend and frontend concurrently
@@ -9,11 +11,11 @@ dev-backend:
 	cd backend && uv run uvicorn main:app --reload --port 8000
 
 dev-frontend:
-	cd frontend && bun run dev --port 5173
+	cd frontend && $(BUN) run dev --port 5173
 
 # Build frontend for production
 build:
-	cd frontend && bun run build
+	cd frontend && $(BUN) run build
 
 # Run production server (serves built frontend + API)
 run:
