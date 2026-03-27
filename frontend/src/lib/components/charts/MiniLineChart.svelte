@@ -62,6 +62,7 @@
       ` L ${valid[valid.length - 1].x},${bottom} Z`;
   });
 
+  const gradId = `area-grad-${Math.random().toString(36).slice(2, 8)}`;
   let hoveredIndex = $state<number | null>(null);
 </script>
 
@@ -74,9 +75,9 @@
       onmouseleave={() => hoveredIndex = null}
     >
       {#if showArea && areaPath}
-        <path d={areaPath} fill="url(#area-grad)" />
+        <path d={areaPath} fill="url(#{gradId})" />
         <defs>
-          <linearGradient id="area-grad" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stop-color="var(--line-color)" stop-opacity="0.12" />
             <stop offset="100%" stop-color="var(--line-color)" stop-opacity="0.02" />
           </linearGradient>

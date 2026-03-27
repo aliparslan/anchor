@@ -203,7 +203,7 @@
     -webkit-text-fill-color: transparent;
   }
 
-  :global([data-theme='dark']) .sleep-time-input {
+  [data-theme='dark'] .sleep-time-input {
     color-scheme: dark;
   }
 

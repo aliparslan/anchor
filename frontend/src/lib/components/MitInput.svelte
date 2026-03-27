@@ -44,7 +44,7 @@
     class="mit-input"
     class:mit-done={completed}
     type="text"
-    placeholder="What's the one thing that makes today a win?"
+    placeholder="What makes today a win?"
     bind:value={text}
     oninput={handleInput}
   />
@@ -57,18 +57,15 @@
   .mit-card {
     display: flex;
     align-items: center;
-    gap: 12px;
-    border-radius: var(--radius-md);
-    padding: var(--space-lg);
-    border: 1px solid var(--border);
-    background: var(--card-bg);
-    margin-bottom: var(--space-widget);
+    gap: 14px;
+    padding: 4px 0;
+    margin-bottom: var(--space-section);
   }
 
   .mit-check {
-    width: 20px;
-    height: 20px;
-    min-width: 20px;
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
     border-radius: 50%;
     border: 2px solid var(--border);
     background: none;
@@ -86,8 +83,8 @@
   }
 
   .mit-dot {
-    width: 12px;
-    height: 12px;
+    width: 14px;
+    height: 14px;
     border-radius: 50%;
     background: var(--accent);
     transform: scale(0);
@@ -109,14 +106,16 @@
     border-radius: 0;
     background: none;
     color: var(--text);
-    font-family: var(--font-sans);
-    font-size: 14px;
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 500;
     outline: none;
     padding: 0;
   }
 
   .mit-input::placeholder {
     color: var(--text-tertiary);
+    font-weight: 400;
   }
 
   .mit-done {
@@ -129,5 +128,11 @@
     color: var(--text-tertiary);
     font-family: var(--font-mono);
     flex-shrink: 0;
+  }
+
+  @media (max-width: 600px) {
+    .mit-input {
+      font-size: 16px;
+    }
   }
 </style>

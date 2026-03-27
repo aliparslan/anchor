@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { onNavigate } from '$app/navigation';
-	import { fade } from 'svelte/transition';
 	import { initTheme } from '$lib/theme';
 	import QuickCaptureButton from '$lib/components/QuickCaptureButton.svelte';
 	import SearchOverlay from '$lib/components/SearchOverlay.svelte';
@@ -10,7 +9,6 @@
 	import '../app.css';
 	let { children } = $props();
 
-	let pageReady = $state(true);
 	let showSearch = $state(false);
 	let captureOpen = $state(false);
 	let online = $state(true);
@@ -72,11 +70,7 @@
 <ToastContainer />
 
 <div class="app">
-	{#key page.url.pathname}
-		<div in:fade={{ duration: 100, delay: 30 }} out:fade={{ duration: 60 }}>
-			{@render children()}
-		</div>
-	{/key}
+	{@render children()}
 </div>
 
 <QuickCaptureButton bind:open={captureOpen} />

@@ -104,6 +104,9 @@
 		align-items: center;
 		gap: 12px;
 		padding: 14px 14px;
+		margin-bottom: -4px;
+		padding-bottom: 18px;
+		border-radius: 0 0 var(--radius-md) var(--radius-md);
 		transition: background 0.2s ease;
 	}
 

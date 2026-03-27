@@ -119,8 +119,10 @@
 	let waterWeek = $state<WaterDay[]>([]);
 	let waterExpanded = $state(false);
 	let waterCelebrated = $state(false);
+	let waterGoalExpanded = $state(false);
 	let cupsContainer: HTMLDivElement;
 	let displayedGlasses = $state(_c?.waterGlasses ?? 0);
+	const waterGoalMet = $derived(waterGlasses >= 8);
 
 	function animateGlasses(target: number) {
 		displayedGlasses = target;
@@ -377,37 +379,45 @@
 <MoodSelector {mood} onselect={handleMoodSelect} />
 
 <SectionHeader title="Hydration" style="margin-top: var(--space-section)" />
-<div class="water-widget">
-	<div class="water-header">
-		<span class="water-ml" class:water-ml-complete={waterGlasses >= 8}>{Math.round($displayedMl).toLocaleString()}</span><span class="water-ml-total">/2,000</span><span class="water-ml-unit">ml</span>
-	</div>
-	<div class="water-cups" bind:this={cupsContainer}>
-		{#each Array(8) as _, i}
-			<button class="water-cup" class:water-cup-filled={i < displayedGlasses} onclick={() => handleWaterTap(i < waterGlasses && i === waterGlasses - 1 ? i : i + 1)} aria-label="Glass {i + 1}">
-				<PintGlass size={28} weight={i < displayedGlasses ? "fill" : "duotone"} />
-			</button>
-		{/each}
-	</div>
-	<button class="water-insights-toggle" onclick={toggleWaterInsights}>
-		{waterExpanded ? 'Hide' : 'View Hydration'}
+{#if waterGoalMet && !waterGoalExpanded}
+	<button class="water-compact" onclick={() => waterGoalExpanded = true}>
+		<PintGlass size={20} weight="fill" class="water-compact-icon" />
+		<span class="water-compact-label">2,000/2,000ml</span>
+		<span class="water-compact-change">Edit</span>
 	</button>
-	{#if waterExpanded}
-		<div class="water-chart">
-			{#if waterWeek.length > 0}
-				<MiniBarChart
-					data={waterBarData}
-					max={10}
-					height={96}
-					color="var(--color-blue)"
-					goalLine={8}
-					formatValue={(v) => `${v}`}
-				/>
-			{:else}
-				<span class="water-chart-empty">No data yet</span>
-			{/if}
+{:else}
+	<div class="water-widget">
+		<div class="water-header">
+			<span class="water-ml" class:water-ml-complete={waterGlasses >= 8}>{Math.round($displayedMl).toLocaleString()}</span><span class="water-ml-total">/2,000</span><span class="water-ml-unit">ml</span>
 		</div>
-	{/if}
-</div>
+		<div class="water-cups" bind:this={cupsContainer}>
+			{#each Array(8) as _, i}
+				<button class="water-cup" class:water-cup-filled={i < displayedGlasses} onclick={() => handleWaterTap(i < waterGlasses && i === waterGlasses - 1 ? i : i + 1)} aria-label="Glass {i + 1}">
+					<PintGlass size={28} weight={i < displayedGlasses ? "fill" : "duotone"} />
+				</button>
+			{/each}
+		</div>
+		<button class="water-insights-toggle" onclick={toggleWaterInsights}>
+			{waterExpanded ? 'Hide' : 'View Hydration'}
+		</button>
+		{#if waterExpanded}
+			<div class="water-chart">
+				{#if waterWeek.length > 0}
+					<MiniBarChart
+						data={waterBarData}
+						max={10}
+						height={96}
+						color="var(--color-blue)"
+						goalLine={8}
+						formatValue={(v) => `${v}`}
+					/>
+				{:else}
+					<span class="water-chart-empty">No data yet</span>
+				{/if}
+			</div>
+		{/if}
+	</div>
+{/if}
 
 <SectionHeader title="Sleep" style="margin-top: var(--space-section)" />
 <SleepLogger />
@@ -813,6 +823,48 @@
 
 	.skel-habit-row.skel-habit-last {
 		border-bottom: none;
+	}
+
+	.water-compact {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		width: 100%;
+		padding: 12px 16px;
+		border-radius: var(--radius-md);
+		border: 1px solid var(--border);
+		background: var(--card-bg);
+		cursor: pointer;
+		transition: background var(--ease-micro);
+		margin-bottom: var(--space-widget);
+	}
+
+	.water-compact:hover {
+		background: var(--bg-hover);
+	}
+
+	.water-compact:active {
+		transform: scale(0.98);
+	}
+
+	:global(.water-compact-icon) {
+		color: var(--color-blue);
+		flex-shrink: 0;
+	}
+
+	.water-compact-label {
+		font-family: var(--font-display);
+		font-size: 15px;
+		font-weight: 500;
+		color: var(--text);
+		flex: 1;
+		text-align: left;
+	}
+
+	.water-compact-change {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		color: var(--text-tertiary);
 	}
 
 </style>

@@ -148,10 +148,9 @@
 		</div>
 	{/if}
 
-	<SectionHeader title="Priority" />
 	<MitInput />
 
-	<SectionHeader title="Focus" style="margin-top: var(--space-section)" />
+	<SectionHeader title="Focus" />
 	{#if loading}
 		<div class="skel-pomo">
 			<div class="skel skel-line" style="width: 60%; height: 48px; margin: 0 auto 12px"></div>
