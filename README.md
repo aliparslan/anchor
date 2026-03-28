@@ -1,4 +1,4 @@
-# <img src="frontend/static/logo.svg" height="24" /> Anchor
+# <img src="frontend/static/icon-512.png" height="24" /> Anchor
 
 Personal dashboard PWA for focus, habits, and content. Calm, minimal, grayscale — every pixel earns its space.
 
