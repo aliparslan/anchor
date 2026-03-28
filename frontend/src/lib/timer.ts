@@ -20,7 +20,7 @@ const DEFAULT_STATE: PomodoroState = {
 
 export const DURATIONS: Record<TimerStatus, number> = {
 	idle: 0,
-	working: 25 * 60 * 1000,
+	working: 5 * 1000, // TODO: revert to 25 * 60 * 1000
 	short_break: 5 * 60 * 1000,
 	long_break: 15 * 60 * 1000
 };
