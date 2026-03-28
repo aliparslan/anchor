@@ -86,7 +86,10 @@ async def send_push_to_all(title: str, body: str):
                 },
                 data=payload,
                 vapid_private_key=vapid,
-                vapid_claims={"sub": "mailto:noreply@base.local"},
+                vapid_claims={
+                    "sub": "mailto:aliparslan@outlook.com",
+                    "aud": "/".join(s["endpoint"].split("/")[:3]),
+                },
             ))
         except WebPushException as e:
             print(f"[Push] Failed to send to {sub['endpoint'][:40]}...: {e}")
