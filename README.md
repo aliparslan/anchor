@@ -1,6 +1,16 @@
-# Anchor
+<p align="center">
+  <img src="frontend/static/icon-512.png" width="80" />
+</p>
 
-Personal dashboard PWA for focus, habits, and content. Built for one user (me), designed to be accessed from my phone. Design inspired by Linear and Notion — calm, minimal, grayscale, every pixel earns its space.
+<h1 align="center">Anchor</h1>
+
+<p align="center">Personal dashboard PWA for focus, habits, and content.<br>Calm, minimal, grayscale — every pixel earns its space.</p>
+
+<p align="center">
+  <img src="screenshots/home.png" width="250" />
+  <img src="screenshots/feed.png" width="250" />
+  <img src="screenshots/track.png" width="250" />
+</p>
 
 ## Features
 
@@ -28,7 +38,7 @@ Database auto-creates at `data/base.db` on first run.
 
 ## Deploy to Fly.io
 
-The easiest way to run Anchor on your phone without keeping a laptop on. Fly handles HTTPS, so no mkcert or cert management needed. Costs under $1/month with auto-stop, or ~$2/month always-on.
+The easiest way to run Anchor on your phone without keeping a laptop on. Fly handles HTTPS, so no mkcert or cert management needed. Costs ~$2/month always-on.
 
 ### First-time setup
 
@@ -57,13 +67,15 @@ Your app is live at `https://your-app-name.fly.dev`.
 
 ### Subsequent deploys
 
+Pushes to main auto-deploy via GitHub Actions. Or manually:
+
 ```bash
 make build && fly deploy
 ```
 
 ### Optional: YouTube cookies
 
-YouTube scraping requires browser cookies. Upload them to the volume:
+YouTube recommendations require browser cookies. You can paste them directly in the Settings page, or upload via SSH:
 
 ```bash
 fly ssh console
@@ -76,11 +88,9 @@ EOF
 
 Enter your GitHub username and personal access token in the Settings page. Stored in the database, persists across deploys.
 
-### Auto-stop behavior
+### Push notifications
 
-By default, the machine stops when idle and starts on the first request (~1-2s cold start). This keeps costs near zero. Content is fetched fresh on each startup.
-
-To keep the machine always on (so the 8am/6pm scheduled fetches and push notifications work reliably), set `min_machines_running = 1` in `fly.toml`.
+The machine runs 24/7 (`min_machines_running = 1`) so scheduled fetches (8am/6pm) and pomodoro timer notifications fire reliably. Push notifications require the PWA to be installed on your home screen.
 
 ### Adding it as an app on iPhone
 
