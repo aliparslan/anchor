@@ -51,7 +51,7 @@
 
 	// Override working duration from settings
 	$effect(() => {
-		DURATIONS.working = 5 * 1000; // TODO: revert to workDuration * 60 * 1000
+		DURATIONS.working = workDuration * 60 * 1000;
 	});
 	let intervalId: ReturnType<typeof setInterval> | null = null;
 	let completing = false;
