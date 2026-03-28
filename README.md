@@ -1,12 +1,8 @@
-<p align="center">
-  <img src="frontend/static/icon-512.png" width="80" />
-</p>
+# <img src="frontend/static/logo.svg" width="28" /> Anchor
 
-<h1 align="center">Anchor</h1>
+Personal dashboard PWA for focus, habits, and content. Calm, minimal, grayscale — every pixel earns its space.
 
-<p align="center">Personal dashboard PWA for focus, habits, and content.<br>Calm, minimal, grayscale — every pixel earns its space.</p>
-
-<p align="center">
+<p>
   <img src="screenshots/home.png" width="250" />
   <img src="screenshots/feed.png" width="250" />
   <img src="screenshots/track.png" width="250" />
